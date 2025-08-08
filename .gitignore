@@ -5,3 +5,18 @@ db.sqlite3
 venv/
 media/
 staticfiles/
+
+# React/Vite project
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+*.cache
+.vite/
+.vscode/
+.idea/
+
+# System or editor files
+*.swp
+Thumbs.db
