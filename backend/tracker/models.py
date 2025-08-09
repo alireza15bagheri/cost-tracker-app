@@ -15,6 +15,7 @@ class Period(models.Model):
 
 class Income(models.Model):
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='incomes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE) 
     source = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     date_received = models.DateField()
@@ -39,6 +40,7 @@ class Budget(models.Model):
 
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='budgets')
     category = models.ForeignKey(BudgetCategory, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE) 
     amount_allocated = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='not_paid')
     due_date = models.DateField(null=True, blank=True)
@@ -50,9 +52,10 @@ class Budget(models.Model):
 class DailyHouseSpending(models.Model):
     date = models.DateField()
     period = models.ForeignKey(Period, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE) 
     spent_amount = models.DecimalField(max_digits=12, decimal_places=2)
     fixed_daily_limit = models.DecimalField(max_digits=12, decimal_places=2, default=100)
-    carryover = models.DecimalField(max_digits=12, decimal_places=2, default=0)  # positive or negative
+    carryover = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.date} spent {self.spent_amount}"
@@ -63,4 +66,5 @@ class DailyHouseSpending(models.Model):
         If spent < limit: adds remainder to carryover
         If spent > limit: sets carryover as deficit
         """
+
         return self.fixed_daily_limit + self.carryover - self.spent_amount
