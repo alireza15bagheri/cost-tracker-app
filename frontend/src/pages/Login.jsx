@@ -17,15 +17,28 @@ export default function Login() {
     e.preventDefault();
     setErr('');
     setLoading(true);
+
+    console.log("Submitting login with:", form);
+
     try {
       const { data } = await api.post('/token/', {
         username: form.username,
         password: form.password,
       });
+
+      console.log("Login successful, received tokens:", data);
+
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
+
+      console.log("Tokens saved to localStorage");
+
       navigate('/dashboard');
+
+      console.log("Navigated to dashboard");
+
     } catch (error) {
+      console.error("Login error:", error?.response?.data || error);
       const msg =
         error?.response?.data?.detail ||
         error?.response?.data?.non_field_errors?.[0] ||
@@ -33,6 +46,7 @@ export default function Login() {
       setErr(msg);
     } finally {
       setLoading(false);
+      console.log("Login flow complete");
     }
   };
 
