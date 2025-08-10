@@ -30,6 +30,8 @@ export default function Login() {
 
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
+    //   Set the time for session expire 
+      localStorage.setItem('session_start', Date.now());
 
       console.log("Tokens saved to localStorage");
 
