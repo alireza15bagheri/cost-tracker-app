@@ -4,28 +4,35 @@ from .models import (
     Income,
     Budget,
     BudgetCategory,
-    DailyHouseSpending
+    DailyHouseSpending,
 )
 
 
+# PeriodSerializer: exposes only safe fields and assigns user on create
 class PeriodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Period
-        fields = '__all__'
-        read_only_fields = ['user']
+        fields = ['id', 'name', 'start_date', 'end_date', 'total_savings']
+        read_only_fields = ['id', 'total_savings']
+
+    def validate(self, attrs):
+        # Support both create and update by falling back to instance values
+        start = attrs.get('start_date', getattr(self.instance, 'start_date', None))
+        end = attrs.get('end_date', getattr(self.instance, 'end_date', None))
+        if start and end and end < start:
+            raise serializers.ValidationError("end_date must be greater than or equal to start_date.")
+        return attrs
 
     def create(self, validated_data):
+        # Assign the authenticated user implicitly
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
 
-from rest_framework import serializers
-from .models import Income
-
+# IncomeSerializer: explicit fields, ownership validation, and basic value checks
 class IncomeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Income
-        # Explicitly list fields to avoid exposing sensitive data 
         fields = ['id', 'source', 'amount', 'date_received', 'period']
         read_only_fields = ['id']
 
@@ -41,11 +48,20 @@ class IncomeSerializer(serializers.ModelSerializer):
         return value
 
     def validate_period(self, value):
-        """Ensure the selected period belongs to the current user."""
+        # Ensure the selected period belongs to the current user
         request = self.context.get('request')
         if value.user != request.user:
             raise serializers.ValidationError("You cannot assign income to another user's period.")
         return value
+
+    def validate(self, attrs):
+        # Optionally ensure the income date falls within the selected period
+        date_received = attrs.get('date_received', getattr(self.instance, 'date_received', None))
+        period = attrs.get('period', getattr(self.instance, 'period', None))
+        if date_received and period:
+            if not (period.start_date <= date_received <= period.end_date):
+                raise serializers.ValidationError("date_received must be within the selected period's date range.")
+        return attrs
 
     def create(self, validated_data):
         # Attach the user from the request context
@@ -53,33 +69,81 @@ class IncomeSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+# BudgetCategorySerializer: explicit fields and implicit user assignment
 class BudgetCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BudgetCategory
-        fields = '__all__'
-        read_only_fields = ['user']
+        fields = ['id', 'name']
+        read_only_fields = ['id']
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
 
+# BudgetSerializer: explicit fields, ownership checks for period and category
 class BudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
-        fields = '__all__'
-        read_only_fields = ['user']
+        fields = ['id', 'period', 'category', 'amount_allocated', 'status', 'due_date']
+        read_only_fields = ['id']
+
+    def validate_amount_allocated(self, value):
+        if value < 0:
+            raise serializers.ValidationError("amount_allocated cannot be negative.")
+        return value
+
+    def validate_period(self, value):
+        # Ensure period belongs to the requesting user
+        request = self.context.get('request')
+        if value.user != request.user:
+            raise serializers.ValidationError("You cannot assign a budget to another user's period.")
+        return value
+
+    def validate_category(self, value):
+        # Ensure category belongs to the requesting user
+        request = self.context.get('request')
+        if value.user != request.user:
+            raise serializers.ValidationError("You cannot assign a budget to another user's category.")
+        return value
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
 
+# DailyHouseSpendingSerializer: explicit fields, ownership check, and value/date validations
 class DailyHouseSpendingSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyHouseSpending
-        fields = '__all__'
-        read_only_fields = ['user']
+        fields = ['id', 'date', 'period', 'spent_amount', 'fixed_daily_limit', 'carryover']
+        read_only_fields = ['id']
+
+    def validate_spent_amount(self, value):
+        if value < 0:
+            raise serializers.ValidationError("spent_amount cannot be negative.")
+        return value
+
+    def validate_fixed_daily_limit(self, value):
+        if value < 0:
+            raise serializers.ValidationError("fixed_daily_limit cannot be negative.")
+        return value
+
+    def validate_period(self, value):
+        # Ensure period belongs to the requesting user
+        request = self.context.get('request')
+        if value.user != request.user:
+            raise serializers.ValidationError("You cannot record spending against another user's period.")
+        return value
+
+    def validate(self, attrs):
+        # Ensure the spending date falls within the selected period
+        date = attrs.get('date', getattr(self.instance, 'date', None))
+        period = attrs.get('period', getattr(self.instance, 'period', None))
+        if date and period:
+            if not (period.start_date <= date <= period.end_date):
+                raise serializers.ValidationError("date must be within the selected period's date range.")
+        return attrs
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
