@@ -19,11 +19,15 @@ class PeriodSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+from rest_framework import serializers
+from .models import Income
+
 class IncomeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Income
-        fields = '__all__'
-        read_only_fields = ['user']
+        # Explicitly list fields to avoid exposing sensitive data 
+        fields = ['id', 'source', 'amount', 'date_received', 'period']
+        read_only_fields = ['id']
 
     def validate_amount(self, value):
         if value <= 0:
@@ -31,11 +35,20 @@ class IncomeSerializer(serializers.ModelSerializer):
         return value
 
     def validate_source(self, value):
-        if not value.strip():
+        value = value.strip()
+        if not value:
             raise serializers.ValidationError("Source cannot be empty.")
-        return value.strip()
+        return value
+
+    def validate_period(self, value):
+        """Ensure the selected period belongs to the current user."""
+        request = self.context.get('request')
+        if value.user != request.user:
+            raise serializers.ValidationError("You cannot assign income to another user's period.")
+        return value
 
     def create(self, validated_data):
+        # Attach the user from the request context
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
