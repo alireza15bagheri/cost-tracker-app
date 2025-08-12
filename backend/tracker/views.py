@@ -30,7 +30,12 @@ class IncomeViewSet(ModelViewSet):
     serializer_class = IncomeSerializer
 
     def get_queryset(self):
-        return Income.objects.filter(user=self.request.user)
+        user = self.request.user
+        queryset = Income.objects.filter(user=user)
+        period_id = self.request.query_params.get('period')
+        if period_id:
+            queryset = queryset.filter(period_id=period_id)
+        return queryset
 
     def perform_create(self, serializer):
         period = serializer.validated_data['period']
@@ -59,7 +64,12 @@ class BudgetViewSet(ModelViewSet):
     serializer_class = BudgetSerializer
 
     def get_queryset(self):
-        return Budget.objects.filter(user=self.request.user)
+        qs = Budget.objects.filter(user=self.request.user)
+        period_id = self.request.query_params.get('period')
+        if period_id:
+            qs = qs.filter(period_id=period_id)
+        return qs
+
 
     def perform_create(self, serializer):
         period = serializer.validated_data['period']

@@ -1,0 +1,46 @@
+.add-period-form {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  max-width: 400px;
+}
+
+.add-period-form h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.add-period-form input[type="text"],
+.add-period-form input[type="date"] {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.add-period-form button {
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-period-form button:hover {
+  background-color: #005fa3;
+}
+
+.add-period-form .error {
+  color: tomato;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}

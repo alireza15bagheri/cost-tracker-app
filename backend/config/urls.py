@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 
 # Optional: a simple root view for testing backend server availability
 def home(request):
-    return HttpResponse("Welcome to the Cost Tracker APP 🎯")
+    return HttpResponse("Welcome to the Cost Tracker APP Backend 🎯")
 
 # Unified URL patterns: all routes declared here
 urlpatterns = [

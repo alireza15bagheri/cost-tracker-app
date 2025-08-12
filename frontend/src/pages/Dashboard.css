@@ -11,7 +11,7 @@
 }
 
 
-.logout-button {
+.dashboard-button {
   margin-bottom: 1.5rem;
   margin-right: 1rem;
   width: 100%;
@@ -27,38 +27,15 @@
   box-shadow: 0 8px 20px rgba(79, 124, 255, .35);
 }
 
-.logout-button:hover {
+.dashboard-button:hover {
   filter: brightness(1.05);
 }
 
-.logout-button:active {
+.dashboard-button:active {
   transform: translateY(1px);
   box-shadow: 0 5px 14px rgba(79, 124, 255, .3);
 }
 
-.add-income-button {
-  margin-bottom: 1.5rem;
-  width: 100%;
-  max-width: 160px;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, var(--primary), var(--primary-600));
-  border: none;
-  color: white;
-  font-weight: 600;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform .05s ease, filter .2s ease, box-shadow .2s ease;
-  box-shadow: 0 8px 20px rgba(79, 124, 255, .35);
-}
-
-.add-income-button:hover {
-  filter: brightness(1.05);
-}
-
-.add-income-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 5px 14px rgba(79, 124, 255, .3);
-}
 
 .toolbar {
   display: flex;
