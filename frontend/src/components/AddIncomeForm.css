@@ -1,0 +1,17 @@
+/* AddIncomeForm.css — styles for AddIncomeForm component */
+
+.income-form {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+}
+
+.income-form input,
+.income-form button {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid var(--primary-500);
+  border-radius: 6px;
+}
