@@ -81,8 +81,10 @@ class BudgetCategorySerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-# BudgetSerializer: explicit fields, ownership checks for period and category
+# BudgetSerializer: nests the category serializer for full object output
 class BudgetSerializer(serializers.ModelSerializer):
+    category = BudgetCategorySerializer(read_only=True)
+
     class Meta:
         model = Budget
         fields = ['id', 'period', 'category', 'amount_allocated', 'status', 'due_date']

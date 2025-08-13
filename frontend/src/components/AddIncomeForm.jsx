@@ -53,6 +53,7 @@ export default function AddIncomeForm({ onAddIncome, activePeriodId }) {
 
   return (
     <form className="app-form" onSubmit={handleSubmit} noValidate>
+      <h3>Add New Income</h3>
       <FormInput
         name="source"
         type="text"

@@ -5,6 +5,8 @@ import { listBudgets } from '../services/budgets';
 import { listPeriods } from '../services/periods';
 import AddIncomeForm from '../components/AddIncomeForm';
 import AddPeriodForm from '../components/AddPeriodForm';
+import AddBudgetForm from '../components/AddBudgetForm';
+import AddCategoryForm from '../components/AddCategoryForm';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -18,6 +20,8 @@ export default function Dashboard() {
   const [err, setErr] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showAddPeriod, setShowAddPeriod] = useState(false);
+  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
 
   const navigate = useNavigate();
 
@@ -130,23 +134,54 @@ export default function Dashboard() {
     setShowAddPeriod(false);
   };
 
+  const handleAddBudget = (newBudget) => {
+    const pid = typeof newBudget.period === 'object' ? newBudget.period?.id : newBudget.period;
+    if (Number(pid) === Number(activePeriodId)) {
+      setAllBudgets((prev) => [...prev, newBudget]);
+    }
+    setShowAddBudget(false);
+  };
+
+  const handleAddCategory = () => {
+    // If you later keep categories here, update them in state.
+    setShowAddCategory(false);
+  };
+
   const incomes = useMemo(() => allIncomes, [allIncomes]);
   const budgets = useMemo(() => allBudgets, [allBudgets]);
 
   return (
     <div className="dashboard-container">
       <div className="button-group">
-        <button className="dashboard-button" onClick={handleLogout}>Logout</button>
+        <button className="dashboard-button" onClick={handleLogout}>
+          Logout
+        </button>
         <button className="dashboard-button" onClick={() => setShowForm((s) => !s)}>
           {showForm ? 'Cancel' : 'Add Income'}
         </button>
         <button className="dashboard-button" onClick={() => setShowAddPeriod((s) => !s)}>
           {showAddPeriod ? 'Cancel' : 'Add Period'}
         </button>
-
+        <button className="dashboard-button" onClick={() => setShowAddBudget((s) => !s)}>
+          {showAddBudget ? 'Cancel' : 'Add Budget'}
+        </button>
+        <button className="dashboard-button" onClick={() => setShowAddCategory((s) => !s)}>
+          {showAddCategory ? 'Cancel' : 'Add Category'}
+        </button>
       </div>
 
       {showAddPeriod && <AddPeriodForm onSuccess={handleAddPeriod} />}
+
+      {showAddBudget && activePeriodId && (
+        <AddBudgetForm
+          activePeriodId={activePeriodId}
+          onAddBudget={handleAddBudget}
+        />
+      )}
+
+      {showAddCategory && (
+        <AddCategoryForm onAddCategory={handleAddCategory} />
+      )}
 
       <div className="toolbar">
         <label htmlFor="active-period"><strong>Active period:</strong></label>
@@ -164,7 +199,9 @@ export default function Dashboard() {
         </select>
       </div>
 
-      {showForm && <AddIncomeForm onAddIncome={handleAddIncome} activePeriodId={activePeriodId} />}
+      {showForm && (
+        <AddIncomeForm onAddIncome={handleAddIncome} activePeriodId={activePeriodId} />
+      )}
 
       {loading && <p>Loading…</p>}
       {err && <pre style={{ color: 'tomato' }}>{JSON.stringify(err, null, 2)}</pre>}
