@@ -1,19 +1,22 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
+
 from .models import Period, Income, Budget, BudgetCategory, DailyHouseSpending
 from .serializers import (
-    PeriodSerializer, IncomeSerializer, 
-    BudgetSerializer, BudgetCategorySerializer, 
+    PeriodSerializer, IncomeSerializer,
+    BudgetSerializer, BudgetCategorySerializer,
     DailyHouseSpendingSerializer
 )
 
-# Helper function to validate ownership of related objects
+
+# Helper: ensure the related object belongs to the current user
 def validate_ownership(obj, user):
     if obj.user != user:
         raise PermissionDenied("This object doesn't belong to you.")
 
-# ViewSet to manage periods tied to the authenticated user
+
+# ----- Periods -----
 class PeriodViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = PeriodSerializer
@@ -24,18 +27,19 @@ class PeriodViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-# ViewSet to manage income entries, ensuring nested Period is owned
+
+# ----- Incomes -----
 class IncomeViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = IncomeSerializer
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Income.objects.filter(user=user)
+        qs = Income.objects.filter(user=user)
         period_id = self.request.query_params.get('period')
         if period_id:
-            queryset = queryset.filter(period_id=period_id)
-        return queryset
+            qs = qs.filter(period_id=period_id)
+        return qs
 
     def perform_create(self, serializer):
         period = serializer.validated_data['period']
@@ -47,7 +51,8 @@ class IncomeViewSet(ModelViewSet):
         validate_ownership(period, self.request.user)
         serializer.save()
 
-# ViewSet to manage budget categories per user
+
+# ----- Budget Categories -----
 class BudgetCategoryViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = BudgetCategorySerializer
@@ -58,7 +63,8 @@ class BudgetCategoryViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-# ViewSet to handle budgets, validating nested Period and Category
+
+# ----- Budgets -----
 class BudgetViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = BudgetSerializer
@@ -69,7 +75,6 @@ class BudgetViewSet(ModelViewSet):
         if period_id:
             qs = qs.filter(period_id=period_id)
         return qs
-
 
     def perform_create(self, serializer):
         period = serializer.validated_data['period']
@@ -85,18 +90,23 @@ class BudgetViewSet(ModelViewSet):
         validate_ownership(category, self.request.user)
         serializer.save()
 
-# ViewSet to track daily house spending and validate nested Period
+
+# ----- Daily House Spendings -----
 class DailyHouseSpendingViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = DailyHouseSpendingSerializer
 
     def get_queryset(self):
-        return DailyHouseSpending.objects.filter(user=self.request.user)
+        qs = DailyHouseSpending.objects.filter(user=self.request.user)
+        period_id = self.request.query_params.get('period')
+        if period_id:
+            qs = qs.filter(period_id=period_id)
+        return qs
 
     def perform_create(self, serializer):
         period = serializer.validated_data['period']
         validate_ownership(period, self.request.user)
-        serializer.save(user=self.request.user)
+        serializer.save()  # user is injected automatically by serializer
 
     def perform_update(self, serializer):
         period = serializer.validated_data.get('period', serializer.instance.period)

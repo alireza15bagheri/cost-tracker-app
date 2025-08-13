@@ -114,12 +114,29 @@ class BudgetSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-# DailyHouseSpendingSerializer: explicit fields, ownership check, and value/date validations
+
 class DailyHouseSpendingSerializer(serializers.ModelSerializer):
+    # Inject the authenticated user automatically (not supplied by the client)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    # Computed, read-only values from the model properties
+    remaining_for_day = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    is_over_limit = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = DailyHouseSpending
-        fields = ['id', 'date', 'period', 'spent_amount', 'fixed_daily_limit', 'carryover']
-        read_only_fields = ['id']
+        fields = [
+            'id',
+            'date',
+            'period',
+            'user',
+            'spent_amount',
+            'fixed_daily_limit',
+            'carryover',
+            'remaining_for_day',
+            'is_over_limit',
+        ]
+        read_only_fields = ['id', 'remaining_for_day', 'is_over_limit']
 
     def validate_spent_amount(self, value):
         if value < 0:
@@ -146,7 +163,3 @@ class DailyHouseSpendingSerializer(serializers.ModelSerializer):
             if not (period.start_date <= date <= period.end_date):
                 raise serializers.ValidationError("date must be within the selected period's date range.")
         return attrs
-
-    def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
-        return super().create(validated_data)
