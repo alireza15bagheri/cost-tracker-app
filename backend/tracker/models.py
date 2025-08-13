@@ -1,5 +1,10 @@
+from decimal import Decimal
 from django.db import models
-from django.contrib.auth.models import User
+from django.db.models import Q
+from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class Period(models.Model):
@@ -15,7 +20,7 @@ class Period(models.Model):
 
 class Income(models.Model):
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='incomes')
-    user = models.ForeignKey(User, on_delete=models.CASCADE) 
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     source = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     date_received = models.DateField()
@@ -40,7 +45,7 @@ class Budget(models.Model):
 
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='budgets')
     category = models.ForeignKey(BudgetCategory, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE) 
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     amount_allocated = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='not_paid')
     due_date = models.DateField(null=True, blank=True)
@@ -50,21 +55,57 @@ class Budget(models.Model):
 
 
 class DailyHouseSpending(models.Model):
-    date = models.DateField()
-    period = models.ForeignKey(Period, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE) 
+    date = models.DateField(db_index=True)
+    period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='daily_spendings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='daily_spendings')
     spent_amount = models.DecimalField(max_digits=12, decimal_places=2)
     fixed_daily_limit = models.DecimalField(max_digits=12, decimal_places=2, default=100)
-    carryover = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    carryover = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "period", "date"], name="uniq_user_period_date"),
+            models.CheckConstraint(check=Q(spent_amount__gte=0), name="spent_amount_gte_0"),
+            models.CheckConstraint(check=Q(fixed_daily_limit__gte=0), name="limit_gte_0"),
+        ]
+        indexes = [
+            models.Index(fields=["user", "period", "date"]),
+        ]
 
     def __str__(self):
         return f"{self.date} spent {self.spent_amount}"
 
+    def clean(self):
+        # Make sure the date falls inside the period range
+        if self.period.start_date and self.period.end_date:
+            if not (self.period.start_date <= self.date <= self.period.end_date):
+                raise ValidationError("Spending date must be within the selected period.")
+
+    @property
+    def remaining_for_day(self):
+        base = self.carryover if self.carryover is not None else Decimal("0")
+        return base + self.fixed_daily_limit - self.spent_amount
+
+    @property
+    def is_over_limit(self):
+        return self.remaining_for_day < 0
+
     def calculate_carryover(self):
         """
-        Calculates the balance impact:
-        If spent < limit: adds remainder to carryover
-        If spent > limit: sets carryover as deficit
+        Calculates the next day's carryover based on today's spend.
         """
+        return self.fixed_daily_limit + (self.carryover or Decimal("0")) - self.spent_amount
 
-        return self.fixed_daily_limit + self.carryover - self.spent_amount
+    def save(self, *args, **kwargs):
+        # Auto-fill carryover from the previous day in the same period
+        if self.carryover is None and self.user_id and self.period_id and self.date:
+            prev = (
+                DailyHouseSpending.objects
+                .filter(user=self.user, period=self.period, date__lt=self.date)
+                .order_by("-date", "-id")
+                .first()
+            )
+            self.carryover = prev.remaining_for_day if prev else Decimal("0")
+        self.full_clean()
+        super().save(*args, **kwargs)
