@@ -12,6 +12,7 @@ import HeaderActions from '../components/HeaderActions';
 import PeriodSelector from '../components/PeriodSelector';
 import Loading from '../components/Loading';
 import ErrorAlert from '../components/ErrorAlert';
+import BudgetSummary from '../components/BudgetSummary'; // NEW: leftover line
 import useActivePeriod from '../hooks/useActivePeriod';
 import useIncomes from '../hooks/useIncomes';
 import useBudgets from '../hooks/useBudgets';
@@ -117,8 +118,8 @@ export default function Dashboard() {
         periods={periods}
         value={activePeriodId}
         onChange={setActivePeriodId}
-        onDelete={deleteActivePeriod}   // pass deletion handler
-        deleting={deletingPeriod}       // pass deletion state
+        onDelete={deleteActivePeriod}
+        deleting={deletingPeriod}
       />
 
       {showIncomeForm && (
@@ -142,12 +143,16 @@ export default function Dashboard() {
 
           <h2>Your budgets</h2>
           {activePeriodId ? (
-            <BudgetList
-              budgets={memoBudgets}
-              updatingBudget={updatingBudget}
-              onToggleStatus={toggleBudgetStatus}
-              onDeleted={removeBudget}
-            />
+            <>
+              <BudgetList
+                budgets={memoBudgets}
+                updatingBudget={updatingBudget}
+                onToggleStatus={toggleBudgetStatus}
+                onDeleted={removeBudget}
+              />
+              {/* NEW: concise leftover line right under budgets */}
+              <BudgetSummary incomes={memoIncomes} budgets={memoBudgets} />
+            </>
           ) : (
             <p>Please select a period to view budgets.</p>
           )}

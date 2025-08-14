@@ -1,5 +1,6 @@
 import React from 'react';
 import { deleteIncome } from '../services/incomes';
+import { formatAmount } from '../utils/format';
 
 export default function IncomeList({ incomes, onDeleted }) {
   const handleDelete = async (id) => {
@@ -20,7 +21,7 @@ export default function IncomeList({ incomes, onDeleted }) {
           key={inc.id}
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
-          <span>{inc.source}: {Number(inc.amount).toFixed(2)}</span>
+          <span>{inc.source}: {formatAmount(inc.amount)}</span>
           <button className="toggle-button" onClick={() => handleDelete(inc.id)}>
             Delete
           </button>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { deleteBudget } from '../services/budgets';
+import { formatAmount } from '../utils/format';
 
 export default function BudgetList({ budgets, onDeleted, onToggleStatus, updatingBudget }) {
   const handleDelete = async (id) => {
@@ -21,7 +22,7 @@ export default function BudgetList({ budgets, onDeleted, onToggleStatus, updatin
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
           <span>
-            {b.category?.name || `Category ${b.category}`} — {Number(b.amount_allocated).toFixed(2)} ({b.status})
+            {b.category?.name || `Category ${b.category}`} — {formatAmount(b.amount_allocated)} ({b.status})
           </span>
           <button
             className="toggle-button"
