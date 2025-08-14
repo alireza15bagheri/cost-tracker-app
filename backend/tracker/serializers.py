@@ -81,13 +81,20 @@ class BudgetCategorySerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-# BudgetSerializer: nests the category serializer for full object output
+# BudgetSerializer: accept category_id on input, return nested category on output
 class BudgetSerializer(serializers.ModelSerializer):
+    # Write: client sends category_id (mapped to model field 'category')
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=BudgetCategory.objects.all(),
+        write_only=True,
+        source='category',
+    )
+    # Read: API returns full category object
     category = BudgetCategorySerializer(read_only=True)
 
     class Meta:
         model = Budget
-        fields = ['id', 'period', 'category', 'amount_allocated', 'status', 'due_date']
+        fields = ['id', 'period', 'category_id', 'category', 'amount_allocated', 'status', 'due_date']
         read_only_fields = ['id']
 
     def validate_amount_allocated(self, value):
@@ -96,14 +103,13 @@ class BudgetSerializer(serializers.ModelSerializer):
         return value
 
     def validate_period(self, value):
-        # Ensure period belongs to the requesting user
         request = self.context.get('request')
         if value.user != request.user:
             raise serializers.ValidationError("You cannot assign a budget to another user's period.")
         return value
 
+    # Keep validation against the resolved model field 'category'
     def validate_category(self, value):
-        # Ensure category belongs to the requesting user
         request = self.context.get('request')
         if value.user != request.user:
             raise serializers.ValidationError("You cannot assign a budget to another user's category.")

@@ -48,9 +48,9 @@ export default function AddBudgetForm({ activePeriodId, onAddBudget }) {
     try {
       setSubmitting(true);
       const payload = {
-        category: Number(formData.category),
+        category_id: Number(formData.category), 
         amount_allocated: Number(formData.amount_allocated),
-        status: 'not_paid', // default fixed value
+        status: 'not_paid',
         due_date: formData.due_date || null,
         period: activePeriodId,
       };

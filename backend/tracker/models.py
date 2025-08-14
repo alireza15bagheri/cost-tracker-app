@@ -84,8 +84,9 @@ class DailyHouseSpending(models.Model):
 
     @property
     def remaining_for_day(self):
-        base = self.carryover if self.carryover is not None else Decimal("0")
-        return base + self.fixed_daily_limit - self.spent_amount
+        base_carryover = self.carryover if self.carryover is not None else Decimal("0")
+        return self.fixed_daily_limit - self.spent_amount + base_carryover
+
 
     @property
     def is_over_limit(self):

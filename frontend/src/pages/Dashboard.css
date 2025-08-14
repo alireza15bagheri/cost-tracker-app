@@ -1,15 +1,27 @@
 @import './Login.css'; /* Reuse existing variables */
 
+html, body {
+  height: 100%;
+}
+
+body {
+  background-attachment: fixed; /* keep it steady on scroll */
+  background-repeat: no-repeat; /* prevent tiling */
+  background-size: cover;       /* stretch to fill */
+}
+
 .dashboard-container {
   padding: 2rem;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
+/* rest of your original styles unchanged */
 .button-group {
   display: flex;
-  gap: 1rem; /* Adds horizontal spacing between children */
+  gap: 1rem;
   flex-wrap: wrap;
 }
-
 
 .dashboard-button {
   margin-bottom: 1.5rem;
@@ -35,7 +47,6 @@
   transform: translateY(1px);
   box-shadow: 0 5px 14px rgba(79, 124, 255, .3);
 }
-
 
 .toolbar {
   display: flex;

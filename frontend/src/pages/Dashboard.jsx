@@ -1,3 +1,4 @@
+// /home/alireza/cost-tracker/frontend/src/pages/Dashboard.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listIncomes } from '../services/incomes';
@@ -7,6 +8,7 @@ import AddIncomeForm from '../components/AddIncomeForm';
 import AddPeriodForm from '../components/AddPeriodForm';
 import AddBudgetForm from '../components/AddBudgetForm';
 import AddCategoryForm from '../components/AddCategoryForm';
+import DailyHouseSpendings from '../components/DailyHouseSpendings';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -143,7 +145,6 @@ export default function Dashboard() {
   };
 
   const handleAddCategory = () => {
-    // If you later keep categories here, update them in state.
     setShowAddCategory(false);
   };
 
@@ -232,6 +233,13 @@ export default function Dashboard() {
             </ul>
           ) : (
             <p>Please select a period to view budgets.</p>
+          )}
+
+          <h2>Daily house spendings</h2>
+          {activePeriodId ? (
+            <DailyHouseSpendings periodId={activePeriodId} />
+          ) : (
+            <p>Please select a period to view daily house spendings.</p>
           )}
         </>
       )}
