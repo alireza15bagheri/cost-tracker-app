@@ -3,14 +3,14 @@ import React, { useEffect, useState } from 'react';
 import {
   listDailyHouseSpendings,
   createDailyHouseSpending,
-  deleteDailyHouseSpending, // new: delete API
+  deleteDailyHouseSpending,
 } from '../services/dailyHouseSpendings';
 
 function DailyHouseSpendings({ periodId }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
-  const [deletingId, setDeletingId] = useState(null); // track which row is being deleted
+  const [deletingId, setDeletingId] = useState(null);
   const [form, setForm] = useState({
     date: '',
     spent_amount: '',
@@ -29,7 +29,6 @@ function DailyHouseSpendings({ periodId }) {
   }, [periodId]);
 
   const normalizeListPayload = (payload) => {
-    // Accept either an array or DRF-style { results: [...] }
     if (Array.isArray(payload)) return payload;
     if (payload && Array.isArray(payload.results)) return payload.results;
     return [];
@@ -41,7 +40,6 @@ function DailyHouseSpendings({ periodId }) {
     try {
       const response = await listDailyHouseSpendings(accessToken, { period: periodId });
       const data = normalizeListPayload(response?.data);
-      // Sort ascending by date (YYYY-MM-DD is safe lexicographically)
       const sorted = [...data].sort((a, b) => String(a.date).localeCompare(String(b.date)));
       setEntries(sorted);
     } catch (e) {
@@ -61,29 +59,25 @@ function DailyHouseSpendings({ periodId }) {
     e.preventDefault();
     setErr(null);
 
-    // Optional: client-side duplicate guard for same date in the same period
     const exists = entries.some((x) => x.date === form.date);
     if (exists) {
       setErr('You already have an entry for this date in this period.');
-      return;
+      return; //  no fetchEntries() here so the error stays visible
     }
 
     try {
       await createDailyHouseSpending(accessToken, {
-        date: form.date, // YYYY-MM-DD
-        period: periodId, // integer ID
+        date: form.date,
+        period: periodId,
         spent_amount: Number(form.spent_amount),
         fixed_daily_limit: Number(form.fixed_daily_limit),
-        // IMPORTANT: do not send carryover; backend auto-fills from previous day
       });
 
       setForm({ date: '', spent_amount: '', fixed_daily_limit: '' });
-      await fetchEntries(); // refresh list to recalc carryovers/remaining
+      await fetchEntries();
     } catch (e2) {
       console.error('Failed to create entry', e2);
       const apiErr = e2?.response?.data;
-
-      // Extract a human-readable message from DRF responses
       const message =
         apiErr?.non_field_errors?.[0] ||
         apiErr?.detail ||
@@ -94,21 +88,20 @@ function DailyHouseSpendings({ periodId }) {
           : null) ||
         e2.message ||
         'Could not save entry';
-
       setErr(message);
     }
   };
 
   const handleDelete = async (id) => {
-    // Small confirmation to prevent accidental deletion
-    const ok = window.confirm('Delete this daily spending entry? This may affect carryover/remaining for subsequent days.');
+    const ok = window.confirm(
+      'Delete this daily spending entry? This may affect carryover/remaining for subsequent days.'
+    );
     if (!ok) return;
 
     setErr(null);
     setDeletingId(id);
     try {
       await deleteDailyHouseSpending(accessToken, id);
-      // Re-fetch so derived fields (carryover/remaining) are up-to-date
       await fetchEntries();
     } catch (e) {
       console.error('Failed to delete entry', e);
@@ -129,7 +122,7 @@ function DailyHouseSpendings({ periodId }) {
         </pre>
       )}
 
-      {/* Add New Spending (above the list) */}
+      {/* Add New Spending */}
       <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
         <fieldset style={{ border: '1px solid #ccc', padding: '1rem' }}>
           <legend>Add New Spending</legend>
@@ -175,14 +168,19 @@ function DailyHouseSpendings({ periodId }) {
             </label>
           </div>
 
-          <button type="submit">Save</button>
+          <button
+            type="submit"
+            className="toggle-button success" 
+          >
+            Save
+          </button>
         </fieldset>
       </form>
 
-      {/* List of spendings (below the form) */}
-      {!loading && !err && !hasEntries && <p style={{ marginTop: '1rem' }}>No entries yet.</p>}
+      {/* Always show list/table even if there's an error */}
+      {!loading && !hasEntries && <p style={{ marginTop: '1rem' }}>No entries yet.</p>}
 
-      {!loading && !err && hasEntries && (
+      {!loading && hasEntries && (
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
           <thead>
             <tr>
@@ -208,17 +206,19 @@ function DailyHouseSpendings({ periodId }) {
                   {e.carryover != null ? Number(e.carryover).toFixed(2) : '—'}
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  {e.remaining_for_day != null ? Number(e.remaining_for_day).toFixed(2) : '—'}
+                  {e.remaining_for_day != null
+                    ? Number(e.remaining_for_day).toFixed(2)
+                    : '—'}
                 </td>
                 <td style={{ textAlign: 'center' }}>
                   <button
                     type="button"
-                    className="toggle-button danger" // reuse existing danger style
+                    className="toggle-button danger"
                     title="Delete this entry"
                     aria-label={`Delete entry for ${e.date}`}
                     onClick={() => handleDelete(e.id)}
                     disabled={deletingId === e.id}
-                    style={{ minWidth: 32 }} // tiny affordance for hit area
+                    style={{ minWidth: 32 }}
                   >
                     {deletingId === e.id ? '…' : '✕'}
                   </button>

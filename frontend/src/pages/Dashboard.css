@@ -97,3 +97,14 @@ body {
   background-color: #dc2626;
   color: white;
 }
+
+/* Success variant for positive actions like Save */
+.toggle-button.success {
+  border-color: #16a34a; /* green-600 */
+  color: #16a34a;
+}
+
+.toggle-button.success:hover {
+  background-color: #16a34a;
+  color: white;
+}
