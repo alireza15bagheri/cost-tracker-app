@@ -16,6 +16,7 @@ import BudgetSummary from '../components/BudgetSummary';
 import useActivePeriod from '../hooks/useActivePeriod';
 import useIncomes from '../hooks/useIncomes';
 import useBudgets from '../hooks/useBudgets';
+import { formatAmount } from '../utils/format';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -86,8 +87,29 @@ export default function Dashboard() {
   const memoIncomes = useMemo(() => incomes, [incomes]);
   const memoBudgets = useMemo(() => budgets, [budgets]);
 
-  // Determine the active period object so we can pass its default_daily_limit
   const activePeriod = periods.find((p) => p.id === activePeriodId);
+
+  // Helper calculations
+  const periodDays = activePeriod
+    ? ((new Date(activePeriod.end_date) - new Date(activePeriod.start_date)) /
+        (1000 * 60 * 60 * 24)) + 1
+    : 0;
+
+  const totalDefaultDaily = activePeriod?.default_daily_limit != null
+    ? Number(activePeriod.default_daily_limit) * periodDays
+    : null;
+
+  const leftAfterBudgets =
+    memoIncomes.reduce((sum, inc) => sum + Number(inc?.amount || 0), 0) -
+    memoBudgets.reduce((sum, b) => sum + Number(b?.amount_allocated || 0), 0);
+
+  // Now: "Left after budgets − Default daily total"
+  const diffFromLeftover = totalDefaultDaily != null
+    ? leftAfterBudgets - totalDefaultDaily
+    : null;
+
+  // Pick color: green if ≥0, red if <0
+  const diffColor = diffFromLeftover >= 0 ? '#16a34a' : '#dc2626';
 
   return (
     <div className="dashboard-container">
@@ -157,11 +179,34 @@ export default function Dashboard() {
           )}
 
           <h2>Daily house spendings</h2>
+
+          {/* Info under header */}
+          {totalDefaultDaily != null && (
+            <div style={{ fontStyle: 'italic', color: '#555' }}>
+              Default daily limit × period days = {formatAmount(totalDefaultDaily)}
+            </div>
+          )}
+
           {activePeriodId ? (
-            <DailyHouseSpendings
-              periodId={activePeriodId}
-              defaultDailyLimit={activePeriod?.default_daily_limit}
-            />
+            <>
+              <DailyHouseSpendings
+                periodId={activePeriodId}
+                defaultDailyLimit={activePeriod?.default_daily_limit}
+              />
+
+              {/* Info under section with color coding */}
+              {diffFromLeftover != null && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    fontWeight: 600,
+                    color: diffColor,
+                  }}
+                >
+                  Left after budgets − Default daily limit × period days = {formatAmount(diffFromLeftover)}
+                </div>
+              )}
+            </>
           ) : (
             <p>Please select a period to view daily house spendings.</p>
           )}
