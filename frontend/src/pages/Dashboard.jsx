@@ -1,4 +1,3 @@
-// /home/alireza/cost-tracker/frontend/src/pages/Dashboard.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listIncomes } from '../services/incomes';
@@ -9,6 +8,7 @@ import AddPeriodForm from '../components/AddPeriodForm';
 import AddBudgetForm from '../components/AddBudgetForm';
 import AddCategoryForm from '../components/AddCategoryForm';
 import DailyHouseSpendings from '../components/DailyHouseSpendings';
+import api from '../services/api';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -24,6 +24,9 @@ export default function Dashboard() {
   const [showAddPeriod, setShowAddPeriod] = useState(false);
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+
+  // Track per-budget updating state to disable the toggle button
+  const [updatingBudget, setUpdatingBudget] = useState({});
 
   const navigate = useNavigate();
 
@@ -148,6 +151,24 @@ export default function Dashboard() {
     setShowAddCategory(false);
   };
 
+  // Toggle status paid <-> not_paid
+  const handleToggleBudgetStatus = async (id, currentStatus) => {
+    setUpdatingBudget((s) => ({ ...s, [id]: true }));
+    const nextStatus = currentStatus === 'paid' ? 'not_paid' : 'paid';
+    try {
+      const res = await api.patch(`budgets/${id}/`, { status: nextStatus });
+      const updated = res.data;
+      setAllBudgets((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: updated.status } : b))
+      );
+    } catch (error) {
+      console.error('Failed to update budget status:', error);
+      alert('Could not update budget status. Please try again.');
+    } finally {
+      setUpdatingBudget((s) => ({ ...s, [id]: false }));
+    }
+  };
+
   const incomes = useMemo(() => allIncomes, [allIncomes]);
   const budgets = useMemo(() => allBudgets, [allBudgets]);
 
@@ -180,9 +201,7 @@ export default function Dashboard() {
         />
       )}
 
-      {showAddCategory && (
-        <AddCategoryForm onAddCategory={handleAddCategory} />
-      )}
+      {showAddCategory && <AddCategoryForm onAddCategory={handleAddCategory} />}
 
       <div className="toolbar">
         <label htmlFor="active-period"><strong>Active period:</strong></label>
@@ -226,8 +245,24 @@ export default function Dashboard() {
           {activePeriodId ? (
             <ul>
               {budgets.map((b) => (
-                <li key={b.id}>
-                  {b.category?.name || `Category ${b.category}`} — {Number(b.amount_allocated).toFixed(2)} ({b.status})
+                <li
+                  key={b.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <span>
+                    {b.category?.name || `Category ${b.category}`} — {Number(b.amount_allocated).toFixed(2)} ({b.status})
+                  </span>
+                  <button
+                    className="toggle-button"
+                    disabled={!!updatingBudget[b.id]}
+                    onClick={() => handleToggleBudgetStatus(b.id, b.status)}
+                  >
+                    {updatingBudget[b.id]
+                      ? 'Updating…'
+                      : b.status === 'paid'
+                      ? 'Mark as not paid'
+                      : 'Mark as paid'}
+                  </button>
                 </li>
               ))}
             </ul>

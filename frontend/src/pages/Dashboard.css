@@ -62,3 +62,26 @@ body {
   border: 1px solid #d0d7de;
   background: white;
 }
+
+/* Minimal toggle button for budget status */
+.toggle-button {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  background: white;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.toggle-button:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.toggle-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
