@@ -7,6 +7,23 @@ import {
 } from '../services/dailyHouseSpendings';
 import { formatAmount } from '../utils/format';
 
+// Helper to convert ISO date to Persian (Jalali) numeric format: yyyy-mm-dd
+function toPersianDateNumeric(isoDate) {
+  if (!isoDate) return '—';
+  const date = new Date(isoDate);
+  const parts = new Intl.DateTimeFormat('fa-IR-u-nu-latn', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const y = parts.find(p => p.type === 'year')?.value;
+  const m = parts.find(p => p.type === 'month')?.value;
+  const d = parts.find(p => p.type === 'day')?.value;
+
+  return `${y}-${m}-${d}`;
+}
+
 function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,10 +35,8 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
     fixed_daily_limit: defaultDailyLimit || '',
   });
 
-  // Use the same key as the axios interceptor to avoid mismatches
   const accessToken = localStorage.getItem('access_token');
 
-  // Prefill/refresh the daily limit input when switching periods or when the period has a stored default.
   useEffect(() => {
     setForm((f) => ({
       ...f,
@@ -83,7 +98,6 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
         fixed_daily_limit: Number(form.fixed_daily_limit),
       });
 
-      // Keep the daily limit the user just used so the next add uses the same value
       setForm({ date: '', spent_amount: '', fixed_daily_limit: form.fixed_daily_limit });
       await fetchEntries();
     } catch (e2) {
@@ -133,7 +147,6 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
         </pre>
       )}
 
-      {/* Add New Spending */}
       <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
         <fieldset style={{ border: '1px solid #ccc', padding: '1rem' }}>
           <legend>Add New Spending</legend>
@@ -179,16 +192,12 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
             </label>
           </div>
 
-          <button
-            type="submit"
-            className="toggle-button success"
-          >
+          <button type="submit" className="toggle-button success">
             Save
           </button>
         </fieldset>
       </form>
 
-      {/* Always show list/table even if there's an error */}
       {!loading && !hasEntries && <p style={{ marginTop: '1rem' }}>No entries yet.</p>}
 
       {!loading && hasEntries && (
@@ -206,7 +215,7 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
           <tbody>
             {entries.map((e) => (
               <tr key={e.id}>
-                <td>{e.date}</td>
+                <td>{toPersianDateNumeric(e.date)}</td>
                 <td style={{ textAlign: 'right' }}>{formatAmount(e.spent_amount)}</td>
                 <td style={{ textAlign: 'right' }}>{formatAmount(e.fixed_daily_limit)}</td>
                 <td style={{ textAlign: 'right' }}>{formatAmount(e.carryover)}</td>
