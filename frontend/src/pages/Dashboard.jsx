@@ -1,3 +1,4 @@
+// frontend/src/pages/Dashboard.jsx
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AddIncomeForm from '../components/AddIncomeForm';
@@ -32,6 +33,8 @@ export default function Dashboard() {
     setActivePeriodId,
     loadingPeriods,
     errorPeriods,
+    deletingPeriod,      
+    deleteActivePeriod,  
   } = useActivePeriod();
 
   // Incomes for active period
@@ -114,10 +117,15 @@ export default function Dashboard() {
         periods={periods}
         value={activePeriodId}
         onChange={setActivePeriodId}
+        onDelete={deleteActivePeriod}   // pass deletion handler
+        deleting={deletingPeriod}       // pass deletion state
       />
 
       {showIncomeForm && (
-        <AddIncomeForm onAddIncome={handleAddIncome} activePeriodId={activePeriodId} />
+        <AddIncomeForm
+          onAddIncome={handleAddIncome}
+          activePeriodId={activePeriodId}
+        />
       )}
 
       {loading && <Loading />}
@@ -127,10 +135,7 @@ export default function Dashboard() {
         <>
           <h2>Your incomes</h2>
           {activePeriodId ? (
-            <IncomeList
-              incomes={memoIncomes}
-              onDeleted={removeIncome}
-            />
+            <IncomeList incomes={memoIncomes} onDeleted={removeIncome} />
           ) : (
             <p>Please select a period to view incomes.</p>
           )}

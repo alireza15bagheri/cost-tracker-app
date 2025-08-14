@@ -1,3 +1,4 @@
+/* frontend/src/pages/Dashboard.css */
 @import './Login.css'; /* Reuse existing variables */
 
 html, body {
@@ -63,7 +64,7 @@ body {
   background: white;
 }
 
-/* Minimal toggle button for budget status */
+/* Minimal toggle button for actions (used for budget status and delete) */
 .toggle-button {
   padding: 4px 8px;
   font-size: 0.8rem;
@@ -84,4 +85,15 @@ body {
 .toggle-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Danger variant specifically for destructive actions like deleting a period */
+.toggle-button.danger {
+  border-color: #dc2626; /* red-600 */
+  color: #dc2626;
+}
+
+.toggle-button.danger:hover {
+  background-color: #dc2626;
+  color: white;
 }
