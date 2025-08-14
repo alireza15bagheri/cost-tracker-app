@@ -12,7 +12,7 @@ import HeaderActions from '../components/HeaderActions';
 import PeriodSelector from '../components/PeriodSelector';
 import Loading from '../components/Loading';
 import ErrorAlert from '../components/ErrorAlert';
-import BudgetSummary from '../components/BudgetSummary'; // NEW: leftover line
+import BudgetSummary from '../components/BudgetSummary';
 import useActivePeriod from '../hooks/useActivePeriod';
 import useIncomes from '../hooks/useIncomes';
 import useBudgets from '../hooks/useBudgets';
@@ -26,7 +26,6 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
 
-  // Periods and active selection
   const {
     periods,
     setPeriods,
@@ -34,11 +33,10 @@ export default function Dashboard() {
     setActivePeriodId,
     loadingPeriods,
     errorPeriods,
-    deletingPeriod,      
-    deleteActivePeriod,  
+    deletingPeriod,
+    deleteActivePeriod,
   } = useActivePeriod();
 
-  // Incomes for active period
   const {
     incomes,
     loadingIncomes,
@@ -47,7 +45,6 @@ export default function Dashboard() {
     removeIncome,
   } = useIncomes(activePeriodId);
 
-  // Budgets for active period + status toggle
   const {
     budgets,
     loadingBudgets,
@@ -88,6 +85,9 @@ export default function Dashboard() {
 
   const memoIncomes = useMemo(() => incomes, [incomes]);
   const memoBudgets = useMemo(() => budgets, [budgets]);
+
+  // Determine the active period object so we can pass its default_daily_limit
+  const activePeriod = periods.find((p) => p.id === activePeriodId);
 
   return (
     <div className="dashboard-container">
@@ -150,7 +150,6 @@ export default function Dashboard() {
                 onToggleStatus={toggleBudgetStatus}
                 onDeleted={removeBudget}
               />
-              {/* NEW: concise leftover line right under budgets */}
               <BudgetSummary incomes={memoIncomes} budgets={memoBudgets} />
             </>
           ) : (
@@ -159,7 +158,10 @@ export default function Dashboard() {
 
           <h2>Daily house spendings</h2>
           {activePeriodId ? (
-            <DailyHouseSpendings periodId={activePeriodId} />
+            <DailyHouseSpendings
+              periodId={activePeriodId}
+              defaultDailyLimit={activePeriod?.default_daily_limit}
+            />
           ) : (
             <p>Please select a period to view daily house spendings.</p>
           )}

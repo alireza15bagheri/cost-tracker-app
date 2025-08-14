@@ -9,15 +9,22 @@ User = get_user_model()
 
 
 class Period(models.Model):
-    name = models.CharField(max_length=100)  # e.g. Farvardin 1404
+    name = models.CharField(max_length=100)
     start_date = models.DateField()
     end_date = models.DateField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     total_savings = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # NEW: remember per-period default daily spending limit after first spending
+    default_daily_limit = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Default daily spending limit for this period"
+    )
 
     def __str__(self):
         return f"{self.name} ({self.start_date} - {self.end_date})"
-
 
 class Income(models.Model):
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='incomes')

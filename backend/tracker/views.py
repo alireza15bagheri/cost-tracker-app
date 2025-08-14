@@ -187,6 +187,13 @@ class DailyHouseSpendingViewSet(ModelViewSet):
         # Save the new row; serializer injects user automatically
         instance = serializer.save()
 
+        # If this is the first spending in this period, store default daily limit
+        if period.default_daily_limit is None:
+            period.default_daily_limit = instance.fixed_daily_limit
+            period.save(update_fields=['default_daily_limit'])
+
+        self._rectify_carryovers_in_db(period=instance.period, user=self.request.user)
+
         # Rectify the entire period so stored data remains consistent
         self._rectify_carryovers_in_db(period=instance.period, user=self.request.user)
 

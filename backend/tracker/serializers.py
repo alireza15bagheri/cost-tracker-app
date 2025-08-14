@@ -8,16 +8,17 @@ from .models import (
     DailyHouseSpending,
 )
 
-
-# PeriodSerializer: exposes only safe fields and assigns user on create
 class PeriodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Period
-        fields = ['id', 'name', 'start_date', 'end_date', 'total_savings']
-        read_only_fields = ['id', 'total_savings']
+        fields = [
+            'id', 'name', 'start_date', 'end_date',
+            'total_savings',
+            'default_daily_limit',  # expose to frontend
+        ]
+        read_only_fields = ['id', 'total_savings', 'default_daily_limit']
 
     def validate(self, attrs):
-        # Support both create and update by falling back to instance values
         start = attrs.get('start_date', getattr(self.instance, 'start_date', None))
         end = attrs.get('end_date', getattr(self.instance, 'end_date', None))
         if start and end and end < start:
@@ -25,7 +26,6 @@ class PeriodSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Assign the authenticated user implicitly
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 

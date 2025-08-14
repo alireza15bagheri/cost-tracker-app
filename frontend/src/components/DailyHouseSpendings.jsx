@@ -5,8 +5,9 @@ import {
   createDailyHouseSpending,
   deleteDailyHouseSpending,
 } from '../services/dailyHouseSpendings';
+import { formatAmount } from '../utils/format';
 
-function DailyHouseSpendings({ periodId }) {
+function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
@@ -14,10 +15,19 @@ function DailyHouseSpendings({ periodId }) {
   const [form, setForm] = useState({
     date: '',
     spent_amount: '',
-    fixed_daily_limit: '',
+    fixed_daily_limit: defaultDailyLimit || '',
   });
 
-  const accessToken = localStorage.getItem('accessToken');
+  // Use the same key as the axios interceptor to avoid mismatches
+  const accessToken = localStorage.getItem('access_token');
+
+  // Prefill/refresh the daily limit input when switching periods or when the period has a stored default.
+  useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      fixed_daily_limit: defaultDailyLimit || '',
+    }));
+  }, [defaultDailyLimit]);
 
   useEffect(() => {
     if (!periodId) {
@@ -62,7 +72,7 @@ function DailyHouseSpendings({ periodId }) {
     const exists = entries.some((x) => x.date === form.date);
     if (exists) {
       setErr('You already have an entry for this date in this period.');
-      return; //  no fetchEntries() here so the error stays visible
+      return;
     }
 
     try {
@@ -73,7 +83,8 @@ function DailyHouseSpendings({ periodId }) {
         fixed_daily_limit: Number(form.fixed_daily_limit),
       });
 
-      setForm({ date: '', spent_amount: '', fixed_daily_limit: '' });
+      // Keep the daily limit the user just used so the next add uses the same value
+      setForm({ date: '', spent_amount: '', fixed_daily_limit: form.fixed_daily_limit });
       await fetchEntries();
     } catch (e2) {
       console.error('Failed to create entry', e2);
@@ -170,7 +181,7 @@ function DailyHouseSpendings({ periodId }) {
 
           <button
             type="submit"
-            className="toggle-button success" 
+            className="toggle-button success"
           >
             Save
           </button>
@@ -196,20 +207,10 @@ function DailyHouseSpendings({ periodId }) {
             {entries.map((e) => (
               <tr key={e.id}>
                 <td>{e.date}</td>
-                <td style={{ textAlign: 'right' }}>
-                  {e.spent_amount != null ? Number(e.spent_amount).toFixed(2) : '—'}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  {e.fixed_daily_limit != null ? Number(e.fixed_daily_limit).toFixed(2) : '—'}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  {e.carryover != null ? Number(e.carryover).toFixed(2) : '—'}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  {e.remaining_for_day != null
-                    ? Number(e.remaining_for_day).toFixed(2)
-                    : '—'}
-                </td>
+                <td style={{ textAlign: 'right' }}>{formatAmount(e.spent_amount)}</td>
+                <td style={{ textAlign: 'right' }}>{formatAmount(e.fixed_daily_limit)}</td>
+                <td style={{ textAlign: 'right' }}>{formatAmount(e.carryover)}</td>
+                <td style={{ textAlign: 'right' }}>{formatAmount(e.remaining_for_day)}</td>
                 <td style={{ textAlign: 'center' }}>
                   <button
                     type="button"
