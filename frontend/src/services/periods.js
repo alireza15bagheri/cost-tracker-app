@@ -18,6 +18,14 @@ export async function createPeriod(payload) {
 }
 
 /**
+ * Update a period by id (partial update).
+ */
+export async function updatePeriod(id, payload) {
+  const { data } = await api.patch(`periods/${id}/`, payload);
+  return data;
+}
+
+/**
  * Delete a period by id (and any backend-cascaded related data).
  */
 export async function deletePeriod(id) {

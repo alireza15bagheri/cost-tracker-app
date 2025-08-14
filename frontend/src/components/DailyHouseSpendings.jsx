@@ -7,20 +7,13 @@ import {
 } from '../services/dailyHouseSpendings';
 import { formatAmount } from '../utils/format';
 
-// Helper to convert ISO date to Persian (Jalali) numeric format: yyyy-mm-dd
-function toPersianDateNumeric(isoDate) {
+// Helper to format date as yyyy-mm-dd (Gregorian/US)
+function toAmericanDate(isoDate) {
   if (!isoDate) return '—';
   const date = new Date(isoDate);
-  const parts = new Intl.DateTimeFormat('fa-IR-u-nu-latn', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-
-  const y = parts.find(p => p.type === 'year')?.value;
-  const m = parts.find(p => p.type === 'month')?.value;
-  const d = parts.find(p => p.type === 'day')?.value;
-
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0'); // 0-based month
+  const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
@@ -215,7 +208,7 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
           <tbody>
             {entries.map((e) => (
               <tr key={e.id}>
-                <td>{toPersianDateNumeric(e.date)}</td>
+                <td>{toAmericanDate(e.date)}</td>
                 <td style={{ textAlign: 'right' }}>{formatAmount(e.spent_amount)}</td>
                 <td style={{ textAlign: 'right' }}>{formatAmount(e.fixed_daily_limit)}</td>
                 <td style={{ textAlign: 'right' }}>{formatAmount(e.carryover)}</td>

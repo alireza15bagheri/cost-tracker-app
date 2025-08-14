@@ -13,6 +13,7 @@ import PeriodSelector from '../components/PeriodSelector';
 import Loading from '../components/Loading';
 import ErrorAlert from '../components/ErrorAlert';
 import BudgetSummary from '../components/BudgetSummary';
+import PeriodNotes from '../components/PeriodNotes';
 import useActivePeriod from '../hooks/useActivePeriod';
 import useIncomes from '../hooks/useIncomes';
 import useBudgets from '../hooks/useBudgets';
@@ -103,13 +104,16 @@ export default function Dashboard() {
     memoIncomes.reduce((sum, inc) => sum + Number(inc?.amount || 0), 0) -
     memoBudgets.reduce((sum, b) => sum + Number(b?.amount_allocated || 0), 0);
 
-  // Now: "Left after budgets − Default daily total"
   const diffFromLeftover = totalDefaultDaily != null
     ? leftAfterBudgets - totalDefaultDaily
     : null;
 
-  // Pick color: green if ≥0, red if <0
   const diffColor = diffFromLeftover >= 0 ? '#16a34a' : '#dc2626';
+
+  // Update the cached list of periods when notes are saved
+  const handleNotesSaved = (updatedPeriod) => {
+    setPeriods((prev) => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
+  };
 
   return (
     <div className="dashboard-container">
@@ -180,7 +184,6 @@ export default function Dashboard() {
 
           <h2>Daily house spendings</h2>
 
-          {/* Info under header */}
           {totalDefaultDaily != null && (
             <div style={{ fontStyle: 'italic', color: '#555' }}>
               Default daily limit × period days = {formatAmount(totalDefaultDaily)}
@@ -194,7 +197,6 @@ export default function Dashboard() {
                 defaultDailyLimit={activePeriod?.default_daily_limit}
               />
 
-              {/* Info under section with color coding */}
               {diffFromLeftover != null && (
                 <div
                   style={{
@@ -210,6 +212,11 @@ export default function Dashboard() {
           ) : (
             <p>Please select a period to view daily house spendings.</p>
           )}
+
+          
+          {activePeriodId ? (
+            <PeriodNotes period={activePeriod} onSaved={handleNotesSaved} />
+          ) : null}
         </>
       )}
     </div>

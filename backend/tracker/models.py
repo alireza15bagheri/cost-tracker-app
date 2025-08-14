@@ -14,7 +14,6 @@ class Period(models.Model):
     end_date = models.DateField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     total_savings = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    # NEW: remember per-period default daily spending limit after first spending
     default_daily_limit = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -22,9 +21,12 @@ class Period(models.Model):
         blank=True,
         help_text="Default daily spending limit for this period"
     )
+    # New: free-form notes stored per period
+    notes = models.TextField(null=True, blank=True, help_text="User notes for this period")
 
     def __str__(self):
         return f"{self.name} ({self.start_date} - {self.end_date})"
+
 
 class Income(models.Model):
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='incomes')
@@ -38,7 +40,7 @@ class Income(models.Model):
 
 
 class BudgetCategory(models.Model):
-    name = models.CharField(max_length=50)  # e.g. House, Loans, Personal
+    name = models.CharField(max_length=50)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -85,7 +87,6 @@ class DailyHouseSpending(models.Model):
         return f"{self.date} spent {self.spent_amount}"
 
     def clean(self):
-        # Make sure the date falls inside the period range
         if self.period.start_date and self.period.end_date:
             if not (self.period.start_date <= self.date <= self.period.end_date):
                 raise ValidationError("Spending date must be within the selected period.")
@@ -95,19 +96,14 @@ class DailyHouseSpending(models.Model):
         base_carryover = self.carryover if self.carryover is not None else Decimal("0")
         return self.fixed_daily_limit - self.spent_amount + base_carryover
 
-
     @property
     def is_over_limit(self):
         return self.remaining_for_day < 0
 
     def calculate_carryover(self):
-        """
-        Calculates the next day's carryover based on today's spend.
-        """
         return self.fixed_daily_limit + (self.carryover or Decimal("0")) - self.spent_amount
 
     def save(self, *args, **kwargs):
-        # Auto-fill carryover from the previous day in the same period
         if self.carryover is None and self.user_id and self.period_id and self.date:
             prev = (
                 DailyHouseSpending.objects
