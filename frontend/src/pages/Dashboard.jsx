@@ -1,8 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listIncomes } from '../services/incomes';
-import { listBudgets } from '../services/budgets';
-import { listPeriods } from '../services/periods';
 import AddIncomeForm from '../components/AddIncomeForm';
 import AddPeriodForm from '../components/AddPeriodForm';
 import AddBudgetForm from '../components/AddBudgetForm';
@@ -10,117 +7,55 @@ import AddCategoryForm from '../components/AddCategoryForm';
 import DailyHouseSpendings from '../components/DailyHouseSpendings';
 import IncomeList from '../components/IncomeList';
 import BudgetList from '../components/BudgetList';
-import api from '../services/api';
+import HeaderActions from '../components/HeaderActions';
+import PeriodSelector from '../components/PeriodSelector';
+import Loading from '../components/Loading';
+import ErrorAlert from '../components/ErrorAlert';
+import useActivePeriod from '../hooks/useActivePeriod';
+import useIncomes from '../hooks/useIncomes';
+import useBudgets from '../hooks/useBudgets';
 import './Dashboard.css';
 
 export default function Dashboard() {
-  const [periods, setPeriods] = useState([]);
-  const [activePeriodId, setActivePeriodId] = useState(null);
-
-  const [allIncomes, setAllIncomes] = useState([]);
-  const [allBudgets, setAllBudgets] = useState([]);
-
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showAddPeriod, setShowAddPeriod] = useState(false);
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
 
-  // Track per-budget updating state to disable the toggle button
-  const [updatingBudget, setUpdatingBudget] = useState({});
-
   const navigate = useNavigate();
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const ps = await listPeriods();
-        if (!mounted) return;
+  // Periods and active selection
+  const {
+    periods,
+    setPeriods,
+    activePeriodId,
+    setActivePeriodId,
+    loadingPeriods,
+    errorPeriods,
+  } = useActivePeriod();
 
-        setPeriods(ps || []);
+  // Incomes for active period
+  const {
+    incomes,
+    loadingIncomes,
+    errorIncomes,
+    addIncome,
+    removeIncome,
+  } = useIncomes(activePeriodId);
 
-        let defaultId = null;
-        const active = ps?.find((p) => p.is_active);
-        if (active) defaultId = active.id;
-        else if (ps?.length) defaultId = ps[ps.length - 1].id;
+  // Budgets for active period + status toggle
+  const {
+    budgets,
+    loadingBudgets,
+    errorBudgets,
+    updatingBudget,
+    addBudget,
+    removeBudget,
+    toggleBudgetStatus,
+  } = useBudgets(activePeriodId);
 
-        setActivePeriodId(defaultId ?? null);
-      } catch (e) {
-        setErr(e?.response?.data || e.message);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      if (!activePeriodId) {
-        setAllIncomes([]);
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      setErr(null);
-      try {
-        const serverFiltered = await listIncomes({ period: activePeriodId });
-        if (!mounted) return;
-        setAllIncomes(serverFiltered);
-      } catch (e) {
-        try {
-          const all = await listIncomes();
-          if (!mounted) return;
-          const filtered = (all || []).filter((i) => {
-            const pid = typeof i.period === 'object' ? i.period?.id : i.period;
-            return Number(pid) === Number(activePeriodId);
-          });
-          setAllIncomes(filtered);
-        } catch (e2) {
-          if (!mounted) return;
-          setErr(e2?.response?.data || e2.message);
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [activePeriodId]);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      if (!activePeriodId) {
-        setAllBudgets([]);
-        return;
-      }
-      try {
-        const serverFiltered = await listBudgets({ period: activePeriodId });
-        if (!mounted) return;
-        setAllBudgets(serverFiltered);
-      } catch (e) {
-        try {
-          const all = await listBudgets();
-          if (!mounted) return;
-          const filtered = (all || []).filter((b) => {
-            const pid = typeof b.period === 'object' ? b.period?.id : b.period;
-            return Number(pid) === Number(activePeriodId);
-          });
-          setAllBudgets(filtered);
-        } catch (e2) {
-          console.error('Failed to load budgets:', e2);
-        }
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [activePeriodId]);
+  const loading = loadingPeriods || loadingIncomes || loadingBudgets;
+  const err = errorPeriods || errorIncomes || errorBudgets;
 
   const handleLogout = () => {
     localStorage.clear();
@@ -128,11 +63,8 @@ export default function Dashboard() {
   };
 
   const handleAddIncome = (newIncome) => {
-    const pid = typeof newIncome.period === 'object' ? newIncome.period?.id : newIncome.period;
-    if (Number(pid) === Number(activePeriodId)) {
-      setAllIncomes((prev) => [...prev, newIncome]);
-    }
-    setShowForm(false);
+    addIncome(newIncome);
+    setShowIncomeForm(false);
   };
 
   const handleAddPeriod = (newPeriod) => {
@@ -142,10 +74,7 @@ export default function Dashboard() {
   };
 
   const handleAddBudget = (newBudget) => {
-    const pid = typeof newBudget.period === 'object' ? newBudget.period?.id : newBudget.period;
-    if (Number(pid) === Number(activePeriodId)) {
-      setAllBudgets((prev) => [...prev, newBudget]);
-    }
+    addBudget(newBudget);
     setShowAddBudget(false);
   };
 
@@ -153,46 +82,22 @@ export default function Dashboard() {
     setShowAddCategory(false);
   };
 
-  // Toggle status paid <-> not_paid
-  const handleToggleBudgetStatus = async (id, currentStatus) => {
-    setUpdatingBudget((s) => ({ ...s, [id]: true }));
-    const nextStatus = currentStatus === 'paid' ? 'not_paid' : 'paid';
-    try {
-      const res = await api.patch(`budgets/${id}/`, { status: nextStatus });
-      const updated = res.data;
-      setAllBudgets((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status: updated.status } : b))
-      );
-    } catch (error) {
-      console.error('Failed to update budget status:', error);
-      alert('Could not update budget status. Please try again.');
-    } finally {
-      setUpdatingBudget((s) => ({ ...s, [id]: false }));
-    }
-  };
-
-  const incomes = useMemo(() => allIncomes, [allIncomes]);
-  const budgets = useMemo(() => allBudgets, [allBudgets]);
+  const memoIncomes = useMemo(() => incomes, [incomes]);
+  const memoBudgets = useMemo(() => budgets, [budgets]);
 
   return (
     <div className="dashboard-container">
-      <div className="button-group">
-        <button className="dashboard-button" onClick={handleLogout}>
-          Logout
-        </button>
-        <button className="dashboard-button" onClick={() => setShowForm((s) => !s)}>
-          {showForm ? 'Cancel' : 'Add Income'}
-        </button>
-        <button className="dashboard-button" onClick={() => setShowAddPeriod((s) => !s)}>
-          {showAddPeriod ? 'Cancel' : 'Add Period'}
-        </button>
-        <button className="dashboard-button" onClick={() => setShowAddBudget((s) => !s)}>
-          {showAddBudget ? 'Cancel' : 'Add Budget'}
-        </button>
-        <button className="dashboard-button" onClick={() => setShowAddCategory((s) => !s)}>
-          {showAddCategory ? 'Cancel' : 'Add Category'}
-        </button>
-      </div>
+      <HeaderActions
+        onLogout={handleLogout}
+        showIncomeForm={showIncomeForm}
+        toggleIncomeForm={() => setShowIncomeForm((s) => !s)}
+        showAddPeriod={showAddPeriod}
+        toggleAddPeriod={() => setShowAddPeriod((s) => !s)}
+        showAddBudget={showAddBudget}
+        toggleAddBudget={() => setShowAddBudget((s) => !s)}
+        showAddCategory={showAddCategory}
+        toggleAddCategory={() => setShowAddCategory((s) => !s)}
+      />
 
       {showAddPeriod && <AddPeriodForm onSuccess={handleAddPeriod} />}
 
@@ -205,38 +110,26 @@ export default function Dashboard() {
 
       {showAddCategory && <AddCategoryForm onAddCategory={handleAddCategory} />}
 
-      <div className="toolbar">
-        <label htmlFor="active-period"><strong>Active period:</strong></label>
-        <select
-          id="active-period"
-          value={activePeriodId ?? ''}
-          onChange={(e) => setActivePeriodId(e.target.value ? Number(e.target.value) : null)}
-        >
-          <option value="">Select a period…</option>
-          {periods.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name || `Period ${p.id}`}
-            </option>
-          ))}
-        </select>
-      </div>
+      <PeriodSelector
+        periods={periods}
+        value={activePeriodId}
+        onChange={setActivePeriodId}
+      />
 
-      {showForm && (
+      {showIncomeForm && (
         <AddIncomeForm onAddIncome={handleAddIncome} activePeriodId={activePeriodId} />
       )}
 
-      {loading && <p>Loading…</p>}
-      {err && <pre style={{ color: 'tomato' }}>{JSON.stringify(err, null, 2)}</pre>}
+      {loading && <Loading />}
+      <ErrorAlert error={err} />
 
       {!loading && !err && (
         <>
           <h2>Your incomes</h2>
           {activePeriodId ? (
             <IncomeList
-              incomes={incomes}
-              onDeleted={(id) =>
-                setAllIncomes((prev) => prev.filter((inc) => inc.id !== id))
-              }
+              incomes={memoIncomes}
+              onDeleted={removeIncome}
             />
           ) : (
             <p>Please select a period to view incomes.</p>
@@ -245,12 +138,10 @@ export default function Dashboard() {
           <h2>Your budgets</h2>
           {activePeriodId ? (
             <BudgetList
-              budgets={budgets}
+              budgets={memoBudgets}
               updatingBudget={updatingBudget}
-              onToggleStatus={handleToggleBudgetStatus}
-              onDeleted={(id) =>
-                setAllBudgets((prev) => prev.filter((b) => b.id !== id))
-              }
+              onToggleStatus={toggleBudgetStatus}
+              onDeleted={removeBudget}
             />
           ) : (
             <p>Please select a period to view budgets.</p>
