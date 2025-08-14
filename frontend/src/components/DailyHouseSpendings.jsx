@@ -1,14 +1,16 @@
-// /home/alireza/cost-tracker/frontend/src/components/DailyHouseSpendings.jsx
+// frontend/src/components/DailyHouseSpendings.jsx
 import React, { useEffect, useState } from 'react';
 import {
   listDailyHouseSpendings,
   createDailyHouseSpending,
+  deleteDailyHouseSpending, // new: delete API
 } from '../services/dailyHouseSpendings';
 
 function DailyHouseSpendings({ periodId }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
+  const [deletingId, setDeletingId] = useState(null); // track which row is being deleted
   const [form, setForm] = useState({
     date: '',
     spent_amount: '',
@@ -76,7 +78,7 @@ function DailyHouseSpendings({ periodId }) {
       });
 
       setForm({ date: '', spent_amount: '', fixed_daily_limit: '' });
-      await fetchEntries();
+      await fetchEntries(); // refresh list to recalc carryovers/remaining
     } catch (e2) {
       console.error('Failed to create entry', e2);
       const apiErr = e2?.response?.data;
@@ -94,6 +96,25 @@ function DailyHouseSpendings({ periodId }) {
         'Could not save entry';
 
       setErr(message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    // Small confirmation to prevent accidental deletion
+    const ok = window.confirm('Delete this daily spending entry? This may affect carryover/remaining for subsequent days.');
+    if (!ok) return;
+
+    setErr(null);
+    setDeletingId(id);
+    try {
+      await deleteDailyHouseSpending(accessToken, id);
+      // Re-fetch so derived fields (carryover/remaining) are up-to-date
+      await fetchEntries();
+    } catch (e) {
+      console.error('Failed to delete entry', e);
+      setErr(e?.response?.data || e.message || 'Failed to delete entry');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -170,7 +191,7 @@ function DailyHouseSpendings({ periodId }) {
               <th style={{ textAlign: 'right' }}>Limit</th>
               <th style={{ textAlign: 'right' }}>Carryover</th>
               <th style={{ textAlign: 'right' }}>Remaining</th>
-              <th style={{ textAlign: 'center' }}>Over Limit?</th>
+              <th style={{ textAlign: 'center' }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -189,7 +210,19 @@ function DailyHouseSpendings({ periodId }) {
                 <td style={{ textAlign: 'right' }}>
                   {e.remaining_for_day != null ? Number(e.remaining_for_day).toFixed(2) : '—'}
                 </td>
-                <td style={{ textAlign: 'center' }}>{e.is_over_limit ? 'Yes' : 'No'}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <button
+                    type="button"
+                    className="toggle-button danger" // reuse existing danger style
+                    title="Delete this entry"
+                    aria-label={`Delete entry for ${e.date}`}
+                    onClick={() => handleDelete(e.id)}
+                    disabled={deletingId === e.id}
+                    style={{ minWidth: 32 }} // tiny affordance for hit area
+                  >
+                    {deletingId === e.id ? '…' : '✕'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

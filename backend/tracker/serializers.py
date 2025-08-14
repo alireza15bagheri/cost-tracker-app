@@ -1,3 +1,4 @@
+# /home/alireza/cost-tracker/backend/tracker/serializers.py
 from rest_framework import serializers
 from .models import (
     Period,
@@ -120,12 +121,15 @@ class BudgetSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-
 class DailyHouseSpendingSerializer(serializers.ModelSerializer):
     # Inject the authenticated user automatically (not supplied by the client)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
-    # Computed, read-only values from the model properties
+    # IMPORTANT: make carryover read-only so clients cannot write it.
+    # We still include it in output because the ViewSet sets it to the derived value on read.
+    carryover = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+
+    # Computed, read-only values (derived from instance.carryover at serialization time)
     remaining_for_day = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     is_over_limit = serializers.BooleanField(read_only=True)
 
@@ -142,7 +146,7 @@ class DailyHouseSpendingSerializer(serializers.ModelSerializer):
             'remaining_for_day',
             'is_over_limit',
         ]
-        read_only_fields = ['id', 'remaining_for_day', 'is_over_limit']
+        read_only_fields = ['id', 'carryover', 'remaining_for_day', 'is_over_limit']
 
     def validate_spent_amount(self, value):
         if value < 0:
