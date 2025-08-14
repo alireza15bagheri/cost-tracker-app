@@ -194,42 +194,44 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
       {!loading && !hasEntries && <p style={{ marginTop: '1rem' }}>No entries yet.</p>}
 
       {!loading && hasEntries && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left' }}>Date</th>
-              <th style={{ textAlign: 'right' }}>Spent</th>
-              <th style={{ textAlign: 'right' }}>Limit</th>
-              <th style={{ textAlign: 'right' }}>Carryover</th>
-              <th style={{ textAlign: 'right' }}>Remaining</th>
-              <th style={{ textAlign: 'center' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => (
-              <tr key={e.id}>
-                <td>{toAmericanDate(e.date)}</td>
-                <td style={{ textAlign: 'right' }}>{formatAmount(e.spent_amount)}</td>
-                <td style={{ textAlign: 'right' }}>{formatAmount(e.fixed_daily_limit)}</td>
-                <td style={{ textAlign: 'right' }}>{formatAmount(e.carryover)}</td>
-                <td style={{ textAlign: 'right' }}>{formatAmount(e.remaining_for_day)}</td>
-                <td style={{ textAlign: 'center' }}>
-                  <button
-                    type="button"
-                    className="toggle-button danger"
-                    title="Delete this entry"
-                    aria-label={`Delete entry for ${e.date}`}
-                    onClick={() => handleDelete(e.id)}
-                    disabled={deletingId === e.id}
-                    style={{ minWidth: 32 }}
-                  >
-                    {deletingId === e.id ? '…' : '✕'}
-                  </button>
-                </td>
+        <div className="table-container">
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left' }}>Date</th>
+                <th style={{ textAlign: 'right' }}>Spent</th>
+                <th style={{ textAlign: 'right' }}>Limit</th>
+                <th style={{ textAlign: 'right' }}>Carryover</th>
+                <th style={{ textAlign: 'right' }}>Remaining</th>
+                <th style={{ textAlign: 'center' }}>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {entries.map((e) => (
+                <tr key={e.id}>
+                  <td>{toAmericanDate(e.date)}</td>
+                  <td style={{ textAlign: 'right' }}>{formatAmount(e.spent_amount)}</td>
+                  <td style={{ textAlign: 'right' }}>{formatAmount(e.fixed_daily_limit)}</td>
+                  <td style={{ textAlign: 'right' }}>{formatAmount(e.carryover)}</td>
+                  <td style={{ textAlign: 'right' }}>{formatAmount(e.remaining_for_day)}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      className="toggle-button danger"
+                      title="Delete this entry"
+                      aria-label={`Delete entry for ${e.date}`}
+                      onClick={() => handleDelete(e.id)}
+                      disabled={deletingId === e.id}
+                      style={{ minWidth: 32 }}
+                    >
+                      {deletingId === e.id ? '…' : '✕'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
