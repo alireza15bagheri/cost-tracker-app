@@ -8,6 +8,8 @@ import AddPeriodForm from '../components/AddPeriodForm';
 import AddBudgetForm from '../components/AddBudgetForm';
 import AddCategoryForm from '../components/AddCategoryForm';
 import DailyHouseSpendings from '../components/DailyHouseSpendings';
+import IncomeList from '../components/IncomeList';
+import BudgetList from '../components/BudgetList';
 import api from '../services/api';
 import './Dashboard.css';
 
@@ -230,42 +232,26 @@ export default function Dashboard() {
         <>
           <h2>Your incomes</h2>
           {activePeriodId ? (
-            <ul>
-              {incomes.map((inc) => (
-                <li key={inc.id}>
-                  {inc.source}: {Number(inc.amount).toFixed(2)}
-                </li>
-              ))}
-            </ul>
+            <IncomeList
+              incomes={incomes}
+              onDeleted={(id) =>
+                setAllIncomes((prev) => prev.filter((inc) => inc.id !== id))
+              }
+            />
           ) : (
             <p>Please select a period to view incomes.</p>
           )}
 
           <h2>Your budgets</h2>
           {activePeriodId ? (
-            <ul>
-              {budgets.map((b) => (
-                <li
-                  key={b.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <span>
-                    {b.category?.name || `Category ${b.category}`} — {Number(b.amount_allocated).toFixed(2)} ({b.status})
-                  </span>
-                  <button
-                    className="toggle-button"
-                    disabled={!!updatingBudget[b.id]}
-                    onClick={() => handleToggleBudgetStatus(b.id, b.status)}
-                  >
-                    {updatingBudget[b.id]
-                      ? 'Updating…'
-                      : b.status === 'paid'
-                      ? 'Mark as not paid'
-                      : 'Mark as paid'}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <BudgetList
+              budgets={budgets}
+              updatingBudget={updatingBudget}
+              onToggleStatus={handleToggleBudgetStatus}
+              onDeleted={(id) =>
+                setAllBudgets((prev) => prev.filter((b) => b.id !== id))
+              }
+            />
           ) : (
             <p>Please select a period to view budgets.</p>
           )}

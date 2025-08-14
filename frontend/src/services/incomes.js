@@ -10,3 +10,5 @@ export async function createIncome(payload) {
   return data;
 }
 
+export const deleteIncome = (id) =>
+  api.delete(`incomes/${id}/`).then(res => res.data);

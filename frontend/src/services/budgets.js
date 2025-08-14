@@ -13,3 +13,6 @@ export async function createBudget(payload) {
 export const markBudgetPaid = (id) =>
   api.patch(`budgets/${id}/`, { status: 'paid' })
      .then(res => res.data);
+
+export const deleteBudget = (id) =>
+  api.delete(`budgets/${id}/`).then(res => res.data);
