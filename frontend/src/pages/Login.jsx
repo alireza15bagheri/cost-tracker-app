@@ -18,7 +18,7 @@ export default function Login() {
     setErr('');
     setLoading(true);
 
-    console.log("Submitting login with:", form);
+    // console.log("Submitting login with:", form);
 
     try {
       const { data } = await api.post('/token/', {
@@ -26,18 +26,18 @@ export default function Login() {
         password: form.password,
       });
 
-      console.log("Login successful, received tokens:", data);
+      // console.log("Login successful, received tokens:", data);
 
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
     //   Set the time for session expire 
       localStorage.setItem('session_start', Date.now());
 
-      console.log("Tokens saved to localStorage");
+      // console.log("Tokens saved to localStorage");
 
       navigate('/dashboard');
 
-      console.log("Navigated to dashboard");
+      // console.log("Navigated to dashboard");
 
     } catch (error) {
       console.error("Login error:", error?.response?.data || error);
@@ -48,7 +48,7 @@ export default function Login() {
       setErr(msg);
     } finally {
       setLoading(false);
-      console.log("Login flow complete");
+      // console.log("Login flow complete");
     }
   };
 
