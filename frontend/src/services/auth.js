@@ -1,41 +1,42 @@
 // /home/alireza/cost-tracker/frontend/src/services/auth.js
 import axios from 'axios';
 
-const STORAGE_KEY = 'access_token';
+// Legacy key cleanup (from older versions that used localStorage)
+const LEGACY_STORAGE_KEY = 'access_token';
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+  }
+} catch {
+  // ignore
+}
 
+// In-memory only access token (no localStorage/sessionStorage)
 let ACCESS_TOKEN = null;
 
 export const setAccessToken = (token) => {
   ACCESS_TOKEN = token || null;
+  // Extra safety: ensure no legacy key lingers
   try {
-    if (token) {
-      localStorage.setItem(STORAGE_KEY, token);
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  } catch {
-    // ignore storage errors (e.g., SSR or disabled storage)
-  }
-};
-
-export const getAccessToken = () => {
-  if (ACCESS_TOKEN) return ACCESS_TOKEN;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      ACCESS_TOKEN = stored;
-      return stored;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
   } catch {
     // ignore
   }
-  return null;
+};
+
+export const getAccessToken = () => {
+  return ACCESS_TOKEN;
 };
 
 export const clearAccessToken = () => {
   ACCESS_TOKEN = null;
+  // Extra safety: ensure no legacy key lingers
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
   } catch {
     // ignore
   }

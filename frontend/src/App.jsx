@@ -9,6 +9,17 @@ import { tryRefresh } from './services/auth';
 function App() {
   const [bootstrapping, setBootstrapping] = useState(true);
 
+  // One-time cleanup of legacy localStorage key from older builds
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('access_token');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -18,7 +29,7 @@ function App() {
         if (mounted) setBootstrapping(false);
         return;
       }
-      // No token in memory/storage — try silent refresh via HttpOnly cookie
+      // No token in memory — try silent refresh via HttpOnly cookie
       await tryRefresh();
       if (mounted) setBootstrapping(false);
     };
@@ -52,7 +63,7 @@ function App() {
 }
 
 /**
- * LoginGate: If a token exists (in-memory or persisted), redirect to /dashboard.
+ * LoginGate: If a token exists (in-memory), redirect to /dashboard.
  * Otherwise, show the Login page.
  */
 function LoginGate() {

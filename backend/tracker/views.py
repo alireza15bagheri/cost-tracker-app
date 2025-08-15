@@ -180,13 +180,10 @@ class DailyHouseSpendingViewSet(ModelViewSet):
 # Auth: HttpOnly refresh cookie
 # =========================
 
-def set_refresh_cookie(response, refresh_token):
+def set_refresh_cookie(response, refresh_token, *, secure: bool, samesite: str = "Lax"):
     """
-    In dev (DEBUG=True), allow non-secure HTTP and Lax so the cookie works at http://localhost:5173.
-    In prod (DEBUG=False over HTTPS), cookie is Secure + Lax.
+    Set the refresh token cookie with explicit control over Secure/SameSite.
     """
-    secure = not settings.DEBUG
-    samesite = "Lax"
     max_age = int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds())
     response.set_cookie(
         key="refresh_token",
@@ -215,9 +212,14 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             return res
         refresh = res.data.get("refresh")
         access = res.data.get("access")
+
+        # Detect HTTPS, including proxied HTTPS via X-Forwarded-Proto
+        xf_proto = request.META.get("HTTP_X_FORWARDED_PROTO", "")
+        is_https = request.is_secure() or xf_proto == "https"
+
         response = Response({"access": access}, status=status.HTTP_200_OK)
         if refresh:
-            set_refresh_cookie(response, refresh)
+            set_refresh_cookie(response, refresh, secure=is_https, samesite="Lax")
         return response
 
 class CookieTokenRefreshView(TokenRefreshView):
