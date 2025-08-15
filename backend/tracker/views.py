@@ -1,4 +1,9 @@
 # /home/alireza/cost-tracker/backend/tracker/views.py
+from django.conf import settings
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
 from decimal import Decimal
 
 from django.db import transaction
@@ -14,12 +19,10 @@ from .serializers import (
     DailyHouseSpendingSerializer
 )
 
-
 # Helper: ensure the related object belongs to the current user
 def validate_ownership(obj, user):
     if obj.user != user:
         raise PermissionDenied("This object doesn't belong to you.")
-
 
 # ----- Periods -----
 class PeriodViewSet(ModelViewSet):
@@ -31,7 +34,6 @@ class PeriodViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
 
 # ----- Incomes -----
 class IncomeViewSet(ModelViewSet):
@@ -56,7 +58,6 @@ class IncomeViewSet(ModelViewSet):
         validate_ownership(period, self.request.user)
         serializer.save()
 
-
 # ----- Budget Categories -----
 class BudgetCategoryViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -67,7 +68,6 @@ class BudgetCategoryViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
 
 # ----- Budgets -----
 class BudgetViewSet(ModelViewSet):
@@ -95,53 +95,33 @@ class BudgetViewSet(ModelViewSet):
         validate_ownership(category, self.request.user)
         serializer.save()
 
-
 # ----- Daily House Spendings -----
 class DailyHouseSpendingViewSet(ModelViewSet):
     """
     Strategy:
-    - READS (list/retrieve): always recompute carryover and remaining_for_day in memory,
-      independent of what's stored, to avoid stale values in API responses.
-    - WRITES (create/update/delete): save the change, then rectify and persist the correct
-      carryover across the entire period so stored data remains consistent for all use cases.
+    - READS (list/retrieve): recompute carryover in memory for fresh API responses.
+    - WRITES (create/update/delete): save, then rectify carryover across the period.
     """
     permission_classes = [IsAuthenticated]
     serializer_class = DailyHouseSpendingSerializer
 
-    # -- Queryset scoping (filter by user and optional period) --
     def get_queryset(self):
         qs = DailyHouseSpending.objects.filter(user=self.request.user)
         period_id = self.request.query_params.get('period')
         if period_id:
             qs = qs.filter(period_id=period_id)
-        # Do NOT rely on model Meta ordering (desc); we will explicitly order asc when recomputing.
         return qs
 
-    # -- Core: recompute carryover for a set of rows in ascending date/id order (in-memory) --
     def _recompute_sequence_in_memory(self, queryset):
-        """
-        Returns a list of model instances with .carryover set to the derived value,
-        without persisting. remaining_for_day will serialize correctly because
-        the model property uses the (now-updated) in-memory carryover.
-
-        Negative carry is allowed (no clamping) to match your current logic.
-        """
         rows = list(queryset.order_by("date", "id"))
         carry = Decimal("0")
         for row in rows:
-            # carryover entering this day is whatever we carried from the previous day
             row.carryover = carry
-            # Remaining for day (not persisted): used to compute next day's carry
             remaining = row.carryover + row.fixed_daily_limit - row.spent_amount
-            carry = remaining  # propagate negatives if overspent
+            carry = remaining
         return rows
 
-    # -- Persisted rectification after any mutation --
     def _rectify_carryovers_in_db(self, period, user):
-        """
-        Recomputes and saves the carryover for all rows of (user, period) in ascending order.
-        Uses a single transaction with bulk_update for efficiency.
-        """
         with transaction.atomic():
             rows = list(
                 DailyHouseSpending.objects
@@ -157,7 +137,6 @@ class DailyHouseSpendingViewSet(ModelViewSet):
             if rows:
                 DailyHouseSpending.objects.bulk_update(rows, ["carryover"])
 
-    # -- READ endpoints: return derived values regardless of what's stored --
     def list(self, request, *args, **kwargs):
         qs = self.filter_queryset(self.get_queryset())
         rows = self._recompute_sequence_in_memory(qs)
@@ -165,42 +144,27 @@ class DailyHouseSpendingViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        """
-        Ensure detail view also reflects derived values by recomputing the whole period
-        and then picking the requested row with its correct in-memory carryover.
-        """
         instance = self.get_object()
         rows = self._recompute_sequence_in_memory(
             DailyHouseSpending.objects.filter(user=request.user, period=instance.period)
         )
-        # Find the recomputed instance by id
         by_id = {r.id: r for r in rows}
         corrected = by_id.get(instance.id, instance)
         serializer = self.get_serializer(corrected)
         return Response(serializer.data)
 
-    # -- WRITE endpoints: save, then rectify and persist carryovers across the period --
     def perform_create(self, serializer):
         period = serializer.validated_data['period']
         validate_ownership(period, self.request.user)
-
-        # Save the new row; serializer injects user automatically
         instance = serializer.save()
-
-        # If this is the first spending in this period, store default daily limit
         if period.default_daily_limit is None:
             period.default_daily_limit = instance.fixed_daily_limit
             period.save(update_fields=['default_daily_limit'])
-
-        self._rectify_carryovers_in_db(period=instance.period, user=self.request.user)
-
-        # Rectify the entire period so stored data remains consistent
         self._rectify_carryovers_in_db(period=instance.period, user=self.request.user)
 
     def perform_update(self, serializer):
         period = serializer.validated_data.get('period', serializer.instance.period)
         validate_ownership(period, self.request.user)
-
         instance = serializer.save()
         self._rectify_carryovers_in_db(period=instance.period, user=self.request.user)
 
@@ -208,9 +172,75 @@ class DailyHouseSpendingViewSet(ModelViewSet):
         instance = self.get_object()
         period = instance.period
         user = request.user
-
         response = super().destroy(request, *args, **kwargs)
-
-        # After deletion, rectify downstream rows in this period
         self._rectify_carryovers_in_db(period=period, user=user)
+        return response
+
+# =========================
+# Auth: HttpOnly refresh cookie
+# =========================
+
+def set_refresh_cookie(response, refresh_token):
+    """
+    In dev (DEBUG=True), allow non-secure HTTP and Lax so the cookie works at http://localhost:5173.
+    In prod (DEBUG=False over HTTPS), cookie is Secure + Lax.
+    """
+    secure = not settings.DEBUG
+    samesite = "Lax"
+    max_age = int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds())
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=max_age,
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/api/token/refresh/",
+    )
+    return response
+
+def clear_refresh_cookie(response):
+    response.delete_cookie(key="refresh_token", path="/api/token/refresh/")
+    return response
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    """
+    POST /api/token/ with {username, password}
+    Returns {access} and sets HttpOnly 'refresh_token' cookie.
+    """
+    def post(self, request, *args, **kwargs):
+        res = super().post(request, *args, **kwargs)
+        # If authentication failed, preserve SimpleJWT's 401 with its body
+        if res.status_code != status.HTTP_200_OK:
+            return res
+        refresh = res.data.get("refresh")
+        access = res.data.get("access")
+        response = Response({"access": access}, status=status.HTTP_200_OK)
+        if refresh:
+            set_refresh_cookie(response, refresh)
+        return response
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """
+    POST /api/token/refresh/ (no body)
+    Reads refresh token from HttpOnly cookie and returns {access}.
+    """
+    def post(self, request, *args, **kwargs):
+        refresh_from_cookie = request.COOKIES.get("refresh_token")
+        if not refresh_from_cookie:
+            return Response({"detail": "No refresh cookie."}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = self.get_serializer(data={"refresh": refresh_from_cookie})
+        serializer.is_valid(raise_exception=True)
+        access = serializer.validated_data.get("access")
+        return Response({"access": access}, status=status.HTTP_200_OK)
+
+class LogoutView(APIView):
+    """
+    POST /api/logout/ — clears the refresh cookie.
+    """
+    permission_classes = []  # allow anonymous; just clears cookie
+
+    def post(self, request):
+        response = Response({"detail": "Logged out."}, status=status.HTTP_200_OK)
+        clear_refresh_cookie(response)
         return response

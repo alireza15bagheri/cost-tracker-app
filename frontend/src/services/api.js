@@ -1,55 +1,76 @@
 // /home/alireza/cost-tracker/frontend/src/services/api.js
 import axios from 'axios';
+import { getAccessToken, setAccessToken, clearAccessToken } from './auth';
+import { tryRefresh } from './auth';
 
-// Base config
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
-const api = axios.create({ baseURL });
+// Prefer same-origin through Vite or Nginx. Build with: VITE_API_URL=/api/
+const baseURL = import.meta.env.VITE_API_URL || '/api/';
+const api = axios.create({ baseURL, withCredentials: true });
 
-// Request interceptor — attach access token
+// Attach in-memory access token to every request
 api.interceptors.request.use((config) => {
-  // 24-hour session check
-  const sessionStart = localStorage.getItem('session_start');
-  const sessionLimit = 24 * 60 * 60 * 1000; // 24 hours
-  const now = Date.now();
-
-  if (sessionStart && now - sessionStart > sessionLimit) {
-    localStorage.clear();
-    window.location.href = '/login';
-    return Promise.reject({ message: 'Session expired — please log in again.' });
+  const token = getAccessToken();
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
   }
-
-  // Attach access token
-  const token = localStorage.getItem('access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-
   return config;
 });
 
-// Response interceptor — handle token expiration
-api.interceptors.response.use(
-  res => res,
-  async error => {
-    const originalRequest = error.config;
-    const isTokenExpired = error.response?.status === 401 &&
-      error.response?.data?.code === 'token_not_valid';
+// Coalesce concurrent refresh attempts
+let refreshPromise = null;
 
-    if (isTokenExpired && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const refresh = localStorage.getItem('refresh_token');
-        const { data } = await axios.post(`${baseURL}token/refresh/`, { refresh });
-        localStorage.setItem('access_token', data.access);
-        originalRequest.headers.Authorization = `Bearer ${data.access}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        localStorage.clear();
-        window.location.href = '/';
-        return Promise.reject(refreshError);
-      }
+// Refresh on 401 using the HttpOnly refresh cookie,
+// but NEVER try to refresh when the failing request is itself an auth endpoint.
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const original = error.config || {};
+    const status = error.response?.status;
+    const url = original.url || '';
+
+    // Only act on 401s
+    if (status !== 401) return Promise.reject(error);
+
+    // Do not attempt refresh on auth endpoints (prevents self-trigger loops)
+    const isAuthEndpoint =
+      url.includes('token/refresh') || url.includes('token/') || url.includes('logout');
+    if (isAuthEndpoint) {
+      return Promise.reject(error);
     }
 
+    // Avoid multiple retries for the same request
+    if (original._retry) {
+      return Promise.reject(error);
+    }
+    original._retry = true;
+
+    try {
+      // Ensure only one refresh in flight
+      if (!refreshPromise) {
+        refreshPromise = tryRefresh(); // returns new access token or null
+      }
+      const newAccess = await refreshPromise;
+      refreshPromise = null;
+
+      if (newAccess) {
+        setAccessToken(newAccess);
+        original.headers = original.headers || {};
+        original.headers.Authorization = `Bearer ${newAccess}`;
+        return api(original);
+      }
+    } catch (_) {
+      refreshPromise = null;
+    }
+
+    // Refresh failed -> clear and send to login (no loops)
+    clearAccessToken();
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      window.location.href = '/';
+    }
     return Promise.reject(error);
   }
 );
 
 export default api;
+export { getAccessToken, setAccessToken, clearAccessToken };

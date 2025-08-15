@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import { getAccessToken } from './services/auth';
 
 function App() {
   return (
@@ -15,7 +16,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Catch-all to keep things tidy */}
+        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
@@ -23,11 +24,11 @@ function App() {
 }
 
 /**
- * LoginGate: If a token exists, redirect to /dashboard.
+ * LoginGate: If a token exists (in-memory), redirect to /dashboard.
  * Otherwise, show the Login page.
  */
 function LoginGate() {
-  const token = localStorage.getItem('access_token');
+  const token = getAccessToken();
   if (token) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -35,12 +36,12 @@ function LoginGate() {
 }
 
 /**
- * ProtectedRoute: If no token, redirect to login.
+ * ProtectedRoute: If no in-memory token, redirect to login.
  * Otherwise, render the protected children.
  */
 function ProtectedRoute({ children }) {
   const location = useLocation();
-  const token = localStorage.getItem('access_token');
+  const token = getAccessToken();
 
   if (!token) {
     return <Navigate to="/" replace state={{ from: location }} />;

@@ -1,4 +1,4 @@
-// frontend/src/components/DailyHouseSpendings.jsx
+// /home/alireza/cost-tracker/frontend/src/components/DailyHouseSpendings.jsx
 import React, { useEffect, useState } from 'react';
 import {
   listDailyHouseSpendings,
@@ -12,7 +12,7 @@ function toAmericanDate(isoDate) {
   if (!isoDate) return '—';
   const date = new Date(isoDate);
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0'); // 0-based month
+  const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
@@ -27,8 +27,6 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
     spent_amount: '',
     fixed_daily_limit: defaultDailyLimit || '',
   });
-
-  const accessToken = localStorage.getItem('access_token');
 
   useEffect(() => {
     setForm((f) => ({
@@ -56,7 +54,7 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
     setLoading(true);
     setErr(null);
     try {
-      const response = await listDailyHouseSpendings(accessToken, { period: periodId });
+      const response = await listDailyHouseSpendings({ period: periodId });
       const data = normalizeListPayload(response?.data);
       const sorted = [...data].sort((a, b) => String(a.date).localeCompare(String(b.date)));
       setEntries(sorted);
@@ -84,7 +82,7 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
     }
 
     try {
-      await createDailyHouseSpending(accessToken, {
+      await createDailyHouseSpending({
         date: form.date,
         period: periodId,
         spent_amount: Number(form.spent_amount),
@@ -119,7 +117,7 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
     setErr(null);
     setDeletingId(id);
     try {
-      await deleteDailyHouseSpending(accessToken, id);
+      await deleteDailyHouseSpending(id);
       await fetchEntries();
     } catch (e) {
       console.error('Failed to delete entry', e);

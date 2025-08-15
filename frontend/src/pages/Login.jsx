@@ -1,6 +1,8 @@
+// /home/alireza/cost-tracker/frontend/src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { setAccessToken } from '../services/auth';
 import './Login.css';
 
 export default function Login() {
@@ -18,29 +20,21 @@ export default function Login() {
     setErr('');
     setLoading(true);
 
-    // console.log("Submitting login with:", form);
-
     try {
-      const { data } = await api.post('/token/', {
+      const { data } = await api.post('token/', {
         username: form.username,
         password: form.password,
       });
 
-      // console.log("Login successful, received tokens:", data);
+      if (!data?.access) {
+        setErr('Login failed. No access token received.');
+        return;
+      }
 
-      localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
-    //   Set the time for session expire 
-      localStorage.setItem('session_start', Date.now());
-
-      // console.log("Tokens saved to localStorage");
-
-      navigate('/dashboard');
-
-      // console.log("Navigated to dashboard");
-
+      setAccessToken(data.access);
+      navigate('/dashboard', { replace: true });
+      console.log('Navigated to dashboard');
     } catch (error) {
-      console.error("Login error:", error?.response?.data || error);
       const msg =
         error?.response?.data?.detail ||
         error?.response?.data?.non_field_errors?.[0] ||
@@ -48,7 +42,6 @@ export default function Login() {
       setErr(msg);
     } finally {
       setLoading(false);
-      // console.log("Login flow complete");
     }
   };
 
@@ -90,9 +83,7 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="login-hint">
-          Tip: Must use Django user credentials.
-        </p>
+        <p className="login-hint">Tip: Must use Django user credentials.</p>
       </div>
     </div>
   );

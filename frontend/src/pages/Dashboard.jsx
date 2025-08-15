@@ -1,6 +1,7 @@
-// frontend/src/pages/Dashboard.jsx
+// /home/alireza/cost-tracker/frontend/src/pages/Dashboard.jsx
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api, { clearAccessToken } from '../services/api';
 import AddIncomeForm from '../components/AddIncomeForm';
 import AddPeriodForm from '../components/AddPeriodForm';
 import AddBudgetForm from '../components/AddBudgetForm';
@@ -60,8 +61,9 @@ export default function Dashboard() {
   const loading = loadingPeriods || loadingIncomes || loadingBudgets;
   const err = errorPeriods || errorIncomes || errorBudgets;
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    try { await api.post('logout/'); } catch (_) {}
+    clearAccessToken();
     navigate('/', { replace: true });
   };
 
@@ -90,10 +92,8 @@ export default function Dashboard() {
 
   const activePeriod = periods.find((p) => p.id === activePeriodId);
 
-  // Helper calculations
   const periodDays = activePeriod
-    ? ((new Date(activePeriod.end_date) - new Date(activePeriod.start_date)) /
-        (1000 * 60 * 60 * 24)) + 1
+    ? ((new Date(activePeriod.end_date) - new Date(activePeriod.start_date)) / (1000 * 60 * 60 * 24)) + 1
     : 0;
 
   const totalDefaultDaily = activePeriod?.default_daily_limit != null
@@ -110,7 +110,6 @@ export default function Dashboard() {
 
   const diffColor = diffFromLeftover >= 0 ? '#16a34a' : '#dc2626';
 
-  // Update the cached list of periods when notes are saved
   const handleNotesSaved = (updatedPeriod) => {
     setPeriods((prev) => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
   };
@@ -213,7 +212,6 @@ export default function Dashboard() {
             <p>Please select a period to view daily house spendings.</p>
           )}
 
-          
           {activePeriodId ? (
             <PeriodNotes period={activePeriod} onSaved={handleNotesSaved} />
           ) : null}
