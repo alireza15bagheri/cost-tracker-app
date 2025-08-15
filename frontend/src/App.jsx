@@ -1,9 +1,38 @@
+// /home/alireza/cost-tracker/frontend/src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import { getAccessToken } from './services/auth';
+import { tryRefresh } from './services/auth';
 
 function App() {
+  const [bootstrapping, setBootstrapping] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      const token = getAccessToken();
+      if (token) {
+        if (mounted) setBootstrapping(false);
+        return;
+      }
+      // No token in memory/storage — try silent refresh via HttpOnly cookie
+      await tryRefresh();
+      if (mounted) setBootstrapping(false);
+    };
+
+    init();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (bootstrapping) {
+    return <div style={{ padding: '2rem' }}>Loading…</div>;
+  }
+
   return (
     <BrowserRouter>
       <Routes>
@@ -16,7 +45,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
@@ -24,7 +52,7 @@ function App() {
 }
 
 /**
- * LoginGate: If a token exists (in-memory), redirect to /dashboard.
+ * LoginGate: If a token exists (in-memory or persisted), redirect to /dashboard.
  * Otherwise, show the Login page.
  */
 function LoginGate() {
@@ -36,7 +64,7 @@ function LoginGate() {
 }
 
 /**
- * ProtectedRoute: If no in-memory token, redirect to login.
+ * ProtectedRoute: If no token (after bootstrap/refresh attempt), redirect to login.
  * Otherwise, render the protected children.
  */
 function ProtectedRoute({ children }) {
