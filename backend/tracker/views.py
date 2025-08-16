@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
@@ -16,7 +16,7 @@ from .models import Period, Income, Budget, BudgetCategory, DailyHouseSpending
 from .serializers import (
     PeriodSerializer, IncomeSerializer,
     BudgetSerializer, BudgetCategorySerializer,
-    DailyHouseSpendingSerializer
+    DailyHouseSpendingSerializer, SignupSerializer
 )
 
 # Helper: ensure the related object belongs to the current user
@@ -246,3 +246,13 @@ class LogoutView(APIView):
         response = Response({"detail": "Logged out."}, status=status.HTTP_200_OK)
         clear_refresh_cookie(response)
         return response
+
+# ----- Signup -----
+class SignupView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Account created successfully."}, status=status.HTTP_201_CREATED)

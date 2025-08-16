@@ -1,5 +1,6 @@
 # /home/alireza/cost-tracker/backend/tracker/serializers.py
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from .models import (
     Period,
     Income,
@@ -8,6 +9,9 @@ from .models import (
     DailyHouseSpending,
 )
 
+User = get_user_model()
+
+
 class PeriodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Period
@@ -15,7 +19,7 @@ class PeriodSerializer(serializers.ModelSerializer):
             'id', 'name', 'start_date', 'end_date',
             'total_savings',
             'default_daily_limit',
-            'notes',  # new: per-period notes
+            'notes',
         ]
         read_only_fields = ['id', 'total_savings']
 
@@ -157,3 +161,27 @@ class DailyHouseSpendingSerializer(serializers.ModelSerializer):
             if not (period.start_date <= date <= period.end_date):
                 raise serializers.ValidationError("date must be within the selected period's date range.")
         return attrs
+
+
+class SignupSerializer(serializers.ModelSerializer):
+    # Simple username + password signup
+    password = serializers.CharField(write_only=True, min_length=6)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'password']
+        read_only_fields = ['id']
+
+    def validate_username(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Username cannot be empty.")
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("Username is already taken.")
+        return value
+
+    def create(self, validated_data):
+        username = validated_data['username']
+        password = validated_data['password']
+        user = User.objects.create_user(username=username, password=password)
+        return user

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useEffect, useState } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Signup from './pages/Signup';
 import { getAccessToken } from './services/auth';
 import { tryRefresh } from './services/auth';
 
@@ -48,6 +49,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginGate />} />
+         <Route path="/signup" element={<Signup />} />
         <Route
           path="/dashboard"
           element={
