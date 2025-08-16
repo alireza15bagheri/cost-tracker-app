@@ -19,7 +19,7 @@ body {
   margin: 0 auto;
 }
 
-/* Responsive actions navigation */
+/* Responsive actions navigation (mobile) */
 .actions-nav {
   position: relative;
   margin-bottom: 1rem;
@@ -96,12 +96,7 @@ body {
   list-style: none;
 }
 
-/* Inline actions (visible on medium+ screens) */
-.actions-inline {
-  display: none;
-}
-
-/* Original button styles (used for inline desktop actions) */
+/* Original button styles (used elsewhere) */
 .button-group {
   display: flex;
   gap: 1rem;
@@ -206,14 +201,11 @@ body {
 
 /* Responsive layout tweaks */
 @media (min-width: 768px) {
+  /* Hide mobile actions on desktop */
+  .actions-nav { display: none; }
   .menu-toggle { display: none; }
   .menu { display: none !important; }
-  .actions-inline {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-  }
+
   .dashboard-container {
     padding: 2rem;
   }

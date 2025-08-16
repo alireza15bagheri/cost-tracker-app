@@ -1,5 +1,6 @@
 // frontend/src/components/HeaderActions.jsx
 import { useEffect, useState } from 'react';
+import '../styles/Navbar.css';
 
 export default function HeaderActions({
   onLogout,
@@ -14,7 +15,7 @@ export default function HeaderActions({
 }) {
   const [open, setOpen] = useState(false);
 
-  // Close menu on Escape
+  // Close mobile menu on Escape
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') setOpen(false);
@@ -23,101 +24,110 @@ export default function HeaderActions({
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Close menu after clicking any action
+  // Close mobile menu after clicking any action
   const withClose = (fn) => () => {
     fn?.();
     setOpen(false);
   };
 
   return (
-    <nav className="actions-nav">
-      {/* Mobile / small screens: hamburger menu */}
-      <button
-        type="button"
-        className="menu-toggle"
-        aria-haspopup="true"
-        aria-expanded={open}
-        aria-controls="actions-menu"
-        onClick={() => setOpen((s) => !s)}
-      >
-        ☰ Menu
-      </button>
-
-      <ul
-        id="actions-menu"
-        className={`menu ${open ? 'open' : ''}`}
-        role="menu"
-      >
-        <li role="none">
-          <button
-            role="menuitem"
-            className="menu-item"
-            onClick={withClose(toggleIncomeForm)}
-            aria-pressed={!!showIncomeForm}
-          >
-            {showIncomeForm ? 'Cancel add income' : 'Add income'}
+    <>
+      {/* Desktop navbar */}
+      <header className="navbar">
+        <div className="navbar-left">
+          <h1 className="app-logo">Cost Tracker</h1>
+        </div>
+        <nav className="navbar-right" aria-label="Primary actions">
+          <button className="nav-btn" onClick={toggleIncomeForm} aria-pressed={!!showIncomeForm}>
+            {showIncomeForm ? 'Cancel Income' : 'Add Income'}
           </button>
-        </li>
-        <li role="none">
-          <button
-            role="menuitem"
-            className="menu-item"
-            onClick={withClose(toggleAddPeriod)}
-            aria-pressed={!!showAddPeriod}
-          >
-            {showAddPeriod ? 'Cancel add period' : 'Add period'}
+          <button className="nav-btn" onClick={toggleAddPeriod} aria-pressed={!!showAddPeriod}>
+            {showAddPeriod ? 'Cancel Period' : 'Add Period'}
           </button>
-        </li>
-        <li role="none">
-          <button
-            role="menuitem"
-            className="menu-item"
-            onClick={withClose(toggleAddBudget)}
-            aria-pressed={!!showAddBudget}
-          >
-            {showAddBudget ? 'Cancel add budget' : 'Add budget'}
+          <button className="nav-btn" onClick={toggleAddBudget} aria-pressed={!!showAddBudget}>
+            {showAddBudget ? 'Cancel Budget' : 'Add Budget'}
           </button>
-        </li>
-        <li role="none">
-          <button
-            role="menuitem"
-            className="menu-item"
-            onClick={withClose(toggleAddCategory)}
-            aria-pressed={!!showAddCategory}
-          >
-            {showAddCategory ? 'Cancel add category' : 'Add category'}
+          <button className="nav-btn" onClick={toggleAddCategory} aria-pressed={!!showAddCategory}>
+            {showAddCategory ? 'Cancel Category' : 'Add Category'}
           </button>
-        </li>
-
-        <li role="separator" className="menu-sep" />
-
-        <li role="none">
-          <button
-            role="menuitem"
-            className="menu-item danger"
-            onClick={withClose(onLogout)}
-          >
+          <button className="nav-btn logout-btn" onClick={onLogout}>
             Logout
           </button>
-        </li>
-      </ul>
+        </nav>
+      </header>
 
-      {/* Desktop / large screens: inline buttons */}
-      <div className="actions-inline">
-        <button className="dashboard-button" onClick={onLogout}>Logout</button>
-        <button className="dashboard-button" onClick={toggleIncomeForm}>
-          {showIncomeForm ? 'Cancel' : 'Add Income'}
+      {/* Mobile / small screens: hamburger menu */}
+      <nav className="actions-nav" aria-label="Mobile actions">
+        <button
+          type="button"
+          className="menu-toggle"
+          aria-haspopup="true"
+          aria-expanded={open}
+          aria-controls="actions-menu"
+          onClick={() => setOpen((s) => !s)}
+        >
+          ☰ Menu
         </button>
-        <button className="dashboard-button" onClick={toggleAddPeriod}>
-          {showAddPeriod ? 'Cancel' : 'Add Period'}
-        </button>
-        <button className="dashboard-button" onClick={toggleAddBudget}>
-          {showAddBudget ? 'Cancel' : 'Add Budget'}
-        </button>
-        <button className="dashboard-button" onClick={toggleAddCategory}>
-          {showAddCategory ? 'Cancel' : 'Add Category'}
-        </button>
-      </div>
-    </nav>
+
+        <ul
+          id="actions-menu"
+          className={`menu ${open ? 'open' : ''}`}
+          role="menu"
+        >
+          <li role="none">
+            <button
+              role="menuitem"
+              className="menu-item"
+              onClick={withClose(toggleIncomeForm)}
+              aria-pressed={!!showIncomeForm}
+            >
+              {showIncomeForm ? 'Cancel add income' : 'Add income'}
+            </button>
+          </li>
+          <li role="none">
+            <button
+              role="menuitem"
+              className="menu-item"
+              onClick={withClose(toggleAddPeriod)}
+              aria-pressed={!!showAddPeriod}
+            >
+              {showAddPeriod ? 'Cancel add period' : 'Add period'}
+            </button>
+          </li>
+          <li role="none">
+            <button
+              role="menuitem"
+              className="menu-item"
+              onClick={withClose(toggleAddBudget)}
+              aria-pressed={!!showAddBudget}
+            >
+              {showAddBudget ? 'Cancel add budget' : 'Add budget'}
+            </button>
+          </li>
+          <li role="none">
+            <button
+              role="menuitem"
+              className="menu-item"
+              onClick={withClose(toggleAddCategory)}
+              aria-pressed={!!showAddCategory}
+            >
+              {showAddCategory ? 'Cancel add category' : 'Add category'}
+            </button>
+          </li>
+
+          <li role="separator" className="menu-sep" />
+
+          <li role="none">
+            <button
+              role="menuitem"
+              className="menu-item danger"
+              onClick={withClose(onLogout)}
+            >
+              Logout
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </>
   );
 }
