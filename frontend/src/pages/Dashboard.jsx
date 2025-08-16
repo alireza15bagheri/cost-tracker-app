@@ -19,6 +19,7 @@ import useActivePeriod from '../hooks/useActivePeriod';
 import useIncomes from '../hooks/useIncomes';
 import useBudgets from '../hooks/useBudgets';
 import { formatAmount } from '../utils/format';
+import Modal from '../components/Modal';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -87,6 +88,30 @@ export default function Dashboard() {
     setShowAddCategory(false);
   };
 
+  const toggleIncomeFormSafe = () => {
+    if (!activePeriodId) {
+      alert('Please select a period first.');
+      return;
+    }
+    setShowIncomeForm(s => !s);
+  };
+
+  const toggleAddBudgetSafe = () => {
+    if (!activePeriodId) {
+      alert('Please select a period first.');
+      return;
+    }
+    setShowAddBudget(s => !s);
+  };
+
+  const toggleAddCategorySafe = () => {
+    if (!activePeriodId) {
+      alert('Please select a period first.');
+      return;
+    }
+    setShowAddCategory(s => !s);
+  };
+
   const memoIncomes = useMemo(() => incomes, [incomes]);
   const memoBudgets = useMemo(() => budgets, [budgets]);
 
@@ -119,25 +144,14 @@ export default function Dashboard() {
       <HeaderActions
         onLogout={handleLogout}
         showIncomeForm={showIncomeForm}
-        toggleIncomeForm={() => setShowIncomeForm((s) => !s)}
+        toggleIncomeForm={toggleIncomeFormSafe}
         showAddPeriod={showAddPeriod}
         toggleAddPeriod={() => setShowAddPeriod((s) => !s)}
         showAddBudget={showAddBudget}
-        toggleAddBudget={() => setShowAddBudget((s) => !s)}
+        toggleAddBudget={toggleAddBudgetSafe}
         showAddCategory={showAddCategory}
-        toggleAddCategory={() => setShowAddCategory((s) => !s)}
+        toggleAddCategory={toggleAddCategorySafe}
       />
-
-      {showAddPeriod && <AddPeriodForm onSuccess={handleAddPeriod} />}
-
-      {showAddBudget && activePeriodId && (
-        <AddBudgetForm
-          activePeriodId={activePeriodId}
-          onAddBudget={handleAddBudget}
-        />
-      )}
-
-      {showAddCategory && <AddCategoryForm onAddCategory={handleAddCategory} />}
 
       <PeriodSelector
         periods={periods}
@@ -146,13 +160,6 @@ export default function Dashboard() {
         onDelete={deleteActivePeriod}
         deleting={deletingPeriod}
       />
-
-      {showIncomeForm && (
-        <AddIncomeForm
-          onAddIncome={handleAddIncome}
-          activePeriodId={activePeriodId}
-        />
-      )}
 
       {loading && <Loading />}
       <ErrorAlert error={err} />
@@ -217,6 +224,47 @@ export default function Dashboard() {
           ) : null}
         </>
       )}
+
+      {/* Modals */}
+      <Modal
+        open={showIncomeForm}
+        onClose={() => setShowIncomeForm(false)}
+        title="Add income"
+        width={520}
+      >
+        <AddIncomeForm onAddIncome={handleAddIncome} activePeriodId={activePeriodId} />
+      </Modal>
+
+      <Modal
+        open={showAddPeriod}
+        onClose={() => setShowAddPeriod(false)}
+        title="Add period"
+        width={520}
+      >
+        <AddPeriodForm onSuccess={handleAddPeriod} />
+      </Modal>
+
+      <Modal
+        open={showAddBudget}
+        onClose={() => setShowAddBudget(false)}
+        title="Add budget"
+        width={520}
+      >
+        {activePeriodId ? (
+          <AddBudgetForm activePeriodId={activePeriodId} onAddBudget={handleAddBudget} />
+        ) : (
+          <p>Please select an active period first.</p>
+        )}
+      </Modal>
+
+      <Modal
+        open={showAddCategory}
+        onClose={() => setShowAddCategory(false)}
+        title="Add category"
+        width={520}
+      >
+        <AddCategoryForm onAddCategory={handleAddCategory} />
+      </Modal>
     </div>
   );
 }

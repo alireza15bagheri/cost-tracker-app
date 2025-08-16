@@ -1,0 +1,56 @@
+/* /home/alireza/cost-tracker/frontend/src/components/Modal.css */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.modal-dialog {
+  width: 100%;
+  background: var(--card, #121a2b);
+  color: var(--text, #e8eefc);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(255,255,255,0.04) inset;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.modal-close {
+  border: 1px solid rgba(255,255,255,0.18);
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.modal-body {
+  padding: 16px;
+}
