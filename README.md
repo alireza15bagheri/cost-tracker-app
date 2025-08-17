@@ -29,7 +29,7 @@ It lets you record incomes, budgets, and daily household spendings — with peri
 
 1. **Clone the Repo**
    ```bash
-   git clone https://github.com/yourusername/cost-tracker.git
+   git clone https://github.com/alireza15bagheri/cost-tracker-app.git
    cd cost-tracker
 
 2. **Configure Environment
