@@ -57,7 +57,10 @@ export default function HeaderActions({
       {/* Desktop navbar */}
       <header className="navbar">
         <div className="navbar-left">
-          <h1 className="app-logo">Cost Tracker</h1>
+          <h1 className="app-logo">
+            <img src="/favicon.png" alt="Cost Tracker logo" />
+            Cost Tracker
+          </h1>
         </div>
         <nav className="navbar-right" aria-label="Primary actions">
           <div className="nav-dropdown-container" ref={addMenuRef}>
