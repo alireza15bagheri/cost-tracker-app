@@ -114,3 +114,20 @@ class DailyHouseSpending(models.Model):
             self.carryover = prev.remaining_for_day if prev else Decimal("0")
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class MiscellaneousCost(models.Model):
+    period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name='misc_costs')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    date_added = models.DateField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_added', '-id']
+        constraints = [
+            models.CheckConstraint(check=models.Q(amount__gte=0), name="misc_cost_amount_gte_0"),
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.amount}"

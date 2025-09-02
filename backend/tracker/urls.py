@@ -7,6 +7,7 @@ from .views import (
     BudgetViewSet,
     DailyHouseSpendingViewSet,
     SignupView,
+    MiscellaneousCostViewSet,
 )
 
 router = DefaultRouter()
@@ -15,6 +16,7 @@ router.register(r'incomes', IncomeViewSet, basename='income')
 router.register(r'categories', BudgetCategoryViewSet, basename='category')
 router.register(r'budgets', BudgetViewSet, basename='budget')
 router.register(r'daily-house-spendings', DailyHouseSpendingViewSet, basename='daily-house-spending')
+router.register(r'misc-costs', MiscellaneousCostViewSet, basename='misc-cost')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -12,11 +12,12 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Period, Income, Budget, BudgetCategory, DailyHouseSpending
+from .models import Period, Income, Budget, BudgetCategory, DailyHouseSpending, MiscellaneousCost
 from .serializers import (
     PeriodSerializer, IncomeSerializer,
     BudgetSerializer, BudgetCategorySerializer,
-    DailyHouseSpendingSerializer, SignupSerializer
+    DailyHouseSpendingSerializer, SignupSerializer,
+    MiscellaneousCostSerializer
 )
 
 # Helper: ensure the related object belongs to the current user
@@ -175,6 +176,26 @@ class DailyHouseSpendingViewSet(ModelViewSet):
         response = super().destroy(request, *args, **kwargs)
         self._rectify_carryovers_in_db(period=period, user=user)
         return response
+
+
+# ----- Miscellaneous Costs -----
+class MiscellaneousCostViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MiscellaneousCostSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = MiscellaneousCost.objects.filter(user=user)
+        period_id = self.request.query_params.get('period')
+        if period_id:
+            qs = qs.filter(period_id=period_id)
+        return qs
+
+    def perform_create(self, serializer):
+        period = serializer.validated_data['period']
+        validate_ownership(period, self.request.user)
+        serializer.save(user=self.request.user)
+
 
 # =========================
 # Auth: HttpOnly refresh cookie

@@ -7,6 +7,7 @@ from .models import (
     Budget,
     BudgetCategory,
     DailyHouseSpending,
+    MiscellaneousCost,
 )
 
 User = get_user_model()
@@ -161,6 +162,32 @@ class DailyHouseSpendingSerializer(serializers.ModelSerializer):
             if not (period.start_date <= date <= period.end_date):
                 raise serializers.ValidationError("date must be within the selected period's date range.")
         return attrs
+
+
+class MiscellaneousCostSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = MiscellaneousCost
+        fields = ['id', 'period', 'user', 'title', 'amount', 'date_added']
+        read_only_fields = ['id', 'date_added']
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than zero.")
+        return value
+
+    def validate_title(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Title cannot be empty.")
+        return value
+
+    def validate_period(self, value):
+        request = self.context.get('request')
+        if value.user != request.user:
+            raise serializers.ValidationError("You cannot add a cost to another user's period.")
+        return value
 
 
 class SignupSerializer(serializers.ModelSerializer):

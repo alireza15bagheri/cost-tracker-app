@@ -18,6 +18,8 @@ import PeriodNotes from '../components/PeriodNotes';
 import useActivePeriod from '../hooks/useActivePeriod';
 import useIncomes from '../hooks/useIncomes';
 import useBudgets from '../hooks/useBudgets';
+import useMiscellaneousCosts from '../hooks/useMiscellaneousCosts';
+import MiscellaneousCosts from '../components/MiscellaneousCosts';
 import { formatAmount } from '../utils/format';
 import Modal from '../components/Modal';
 import './Dashboard.css';
@@ -29,7 +31,6 @@ export default function Dashboard() {
   const [showAddCategory, setShowAddCategory] = useState(false);
 
   const navigate = useNavigate();
-
   const {
     periods,
     setPeriods,
@@ -40,7 +41,6 @@ export default function Dashboard() {
     deletingPeriod,
     deleteActivePeriod,
   } = useActivePeriod();
-
   const {
     incomes,
     loadingIncomes,
@@ -48,7 +48,6 @@ export default function Dashboard() {
     addIncome,
     removeIncome,
   } = useIncomes(activePeriodId);
-
   const {
     budgets,
     loadingBudgets,
@@ -58,32 +57,35 @@ export default function Dashboard() {
     removeBudget,
     toggleBudgetStatus,
   } = useBudgets(activePeriodId);
+  const {
+    miscCosts,
+    loadingMiscCosts,
+    errorMiscCosts,
+    addMiscCost,
+    removeMiscCost,
+  } = useMiscellaneousCosts(activePeriodId);
 
-  const loading = loadingPeriods || loadingIncomes || loadingBudgets;
-  const err = errorPeriods || errorIncomes || errorBudgets;
+  const loading = loadingPeriods || loadingIncomes || loadingBudgets || loadingMiscCosts;
+  const err = errorPeriods || errorIncomes || errorBudgets || errorMiscCosts;
 
   const handleLogout = async () => {
     try { await api.post('logout/'); } catch (_) {}
     clearAccessToken();
     navigate('/', { replace: true });
   };
-
   const handleAddIncome = (newIncome) => {
     addIncome(newIncome);
     setShowIncomeForm(false);
   };
-
   const handleAddPeriod = (newPeriod) => {
     setPeriods((prev) => [...prev, newPeriod]);
     setActivePeriodId(newPeriod.id);
     setShowAddPeriod(false);
   };
-
   const handleAddBudget = (newBudget) => {
     addBudget(newBudget);
     setShowAddBudget(false);
   };
-
   const handleAddCategory = () => {
     setShowAddCategory(false);
   };
@@ -114,17 +116,15 @@ export default function Dashboard() {
 
   const memoIncomes = useMemo(() => incomes, [incomes]);
   const memoBudgets = useMemo(() => budgets, [budgets]);
+  const memoMiscCosts = useMemo(() => miscCosts, [miscCosts]);
 
   const activePeriod = periods.find((p) => p.id === activePeriodId);
-
   const periodDays = activePeriod
     ? ((new Date(activePeriod.end_date) - new Date(activePeriod.start_date)) / (1000 * 60 * 60 * 24)) + 1
     : 0;
-
   const totalDefaultDaily = activePeriod?.default_daily_limit != null
     ? Number(activePeriod.default_daily_limit) * periodDays
     : null;
-
   const leftAfterBudgets =
     memoIncomes.reduce((sum, inc) => sum + Number(inc?.amount || 0), 0) -
     memoBudgets.reduce((sum, b) => sum + Number(b?.amount_allocated || 0), 0);
@@ -133,7 +133,11 @@ export default function Dashboard() {
     ? leftAfterBudgets - totalDefaultDaily
     : null;
 
-  const diffColor = diffFromLeftover >= 0 ? '#16a34a' : '#dc2626';
+  const totalMiscCosts = memoMiscCosts.reduce((sum, cost) => sum + Number(cost.amount || 0), 0);
+  
+  const finalRemaining = diffFromLeftover != null ? diffFromLeftover - totalMiscCosts : null;
+
+  const diffColor = finalRemaining >= 0 ? '#16a34a' : '#dc2626';
 
   const handleNotesSaved = (updatedPeriod) => {
     setPeriods((prev) => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
@@ -208,15 +212,38 @@ export default function Dashboard() {
                   style={{
                     marginTop: '0.5rem',
                     fontWeight: 600,
-                    color: diffColor,
                   }}
                 >
-                  Left after budgets − Default daily limit × period days = {formatAmount(diffFromLeftover)}
+                  Left after budgets − (Default daily limit × period days) = {formatAmount(diffFromLeftover)}
                 </div>
               )}
             </>
           ) : (
             <p>Please select a period to view daily house spendings.</p>
+          )}
+          
+          {activePeriodId && (
+            <>
+              <h2 style={{marginTop: '2rem'}}>Miscellaneous Costs</h2>
+              <MiscellaneousCosts 
+                periodId={activePeriodId}
+                costs={memoMiscCosts}
+                onCostAdded={addMiscCost}
+                onCostDeleted={removeMiscCost}
+              />
+              {finalRemaining != null && (
+                 <div
+                  style={{
+                    marginTop: '0.5rem',
+                    fontWeight: 700,
+                    color: diffColor,
+                    fontSize: '1.1rem'
+                  }}
+                >
+                  REMAINING AMOUNT: {formatAmount(finalRemaining)}
+                </div>
+              )}
+            </>
           )}
 
           {activePeriodId ? (
