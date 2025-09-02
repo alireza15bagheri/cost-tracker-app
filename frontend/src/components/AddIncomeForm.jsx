@@ -1,3 +1,4 @@
+// /home/alireza/cost-tracker/frontend/src/components/AddIncomeForm.jsx
 import { useState } from 'react';
 import { createIncome } from '../services/incomes';
 import FormInput from '../components/FormInput'; // Import reusable input
@@ -11,7 +12,6 @@ export default function AddIncomeForm({ onAddIncome, activePeriodId }) {
   });
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((s) => ({ ...s, [name]: value }));
@@ -20,7 +20,6 @@ export default function AddIncomeForm({ onAddIncome, activePeriodId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
-
     // Basic validation
     if (!activePeriodId) return setSubmitError('Please select an active period first.');
     if (!formData.source?.trim()) return setSubmitError('Source is required.');
@@ -35,7 +34,6 @@ export default function AddIncomeForm({ onAddIncome, activePeriodId }) {
         date_received: formData.date_received,
         period: activePeriodId,
       };
-
       const created = await createIncome(payload);
       onAddIncome?.(created);
       setFormData({ source: '', amount: '', date_received: '' });
@@ -50,7 +48,6 @@ export default function AddIncomeForm({ onAddIncome, activePeriodId }) {
       setSubmitting(false);
     }
   };
-
   return (
     <form className="app-form" onSubmit={handleSubmit} noValidate>
       <h3>Add New Income</h3>

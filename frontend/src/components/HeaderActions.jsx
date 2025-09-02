@@ -1,5 +1,5 @@
 // frontend/src/components/HeaderActions.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import '../styles/Navbar.css';
 
 export default function HeaderActions({
@@ -13,21 +13,43 @@ export default function HeaderActions({
   showAddCategory,
   toggleAddCategory,
 }) {
-  const [open, setOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const addMenuRef = useRef(null);
 
-  // Close mobile menu on Escape
+  // Close menus on Escape key
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setAddMenuOpen(false);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Close mobile menu after clicking any action
-  const withClose = (fn) => () => {
+  // Close "Add New" dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(event.target)) {
+        setAddMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Wrapper to close mobile menu after an action
+  const withMobileClose = (fn) => () => {
     fn?.();
-    setOpen(false);
+    setMobileMenuOpen(false);
+  };
+
+  // Wrapper to close desktop "Add" menu after an action
+  const withDesktopAddClose = (fn) => () => {
+    fn?.();
+    setAddMenuOpen(false);
   };
 
   return (
@@ -38,19 +60,26 @@ export default function HeaderActions({
           <h1 className="app-logo">Cost Tracker</h1>
         </div>
         <nav className="navbar-right" aria-label="Primary actions">
-          <button className="nav-btn" onClick={toggleIncomeForm} aria-pressed={!!showIncomeForm}>
-            {showIncomeForm ? 'Cancel Income' : 'Add Income'}
-          </button>
-          <button className="nav-btn" onClick={toggleAddPeriod} aria-pressed={!!showAddPeriod}>
-            {showAddPeriod ? 'Cancel Period' : 'Add Period'}
-          </button>
-          <button className="nav-btn" onClick={toggleAddBudget} aria-pressed={!!showAddBudget}>
-            {showAddBudget ? 'Cancel Budget' : 'Add Budget'}
-          </button>
-          <button className="nav-btn" onClick={toggleAddCategory} aria-pressed={!!showAddCategory}>
-            {showAddCategory ? 'Cancel Category' : 'Add Category'}
-          </button>
-          <button className="nav-btn logout-btn" onClick={onLogout}>
+          <div className="nav-dropdown-container" ref={addMenuRef}>
+            <button
+              className="nav-btn nav-btn--primary"
+              onClick={() => setAddMenuOpen((s) => !s)}
+              aria-haspopup="true"
+              aria-expanded={addMenuOpen}
+            >
+              Add New...
+            </button>
+            {addMenuOpen && (
+              <ul className="nav-dropdown">
+                <li><button onClick={withDesktopAddClose(toggleIncomeForm)}>Income</button></li>
+                <li><button onClick={withDesktopAddClose(toggleAddPeriod)}>Period</button></li>
+                <li><button onClick={withDesktopAddClose(toggleAddBudget)}>Budget</button></li>
+                <li><button onClick={withDesktopAddClose(toggleAddCategory)}>Category</button></li>
+              </ul>
+            )}
+          </div>
+
+          <button className="nav-btn nav-btn--danger" onClick={onLogout}>
             Logout
           </button>
         </nav>
@@ -62,67 +91,43 @@ export default function HeaderActions({
           type="button"
           className="menu-toggle"
           aria-haspopup="true"
-          aria-expanded={open}
+          aria-expanded={mobileMenuOpen}
           aria-controls="actions-menu"
-          onClick={() => setOpen((s) => !s)}
+          onClick={() => setMobileMenuOpen((s) => !s)}
         >
           ☰ Menu
         </button>
 
         <ul
           id="actions-menu"
-          className={`menu ${open ? 'open' : ''}`}
+          className={`menu ${mobileMenuOpen ? 'open' : ''}`}
           role="menu"
         >
           <li role="none">
-            <button
-              role="menuitem"
-              className="menu-item"
-              onClick={withClose(toggleIncomeForm)}
-              aria-pressed={!!showIncomeForm}
-            >
-              {showIncomeForm ? 'Cancel add income' : 'Add income'}
+            <button role="menuitem" className="menu-item" onClick={withMobileClose(toggleIncomeForm)}>
+              Add Income
             </button>
           </li>
           <li role="none">
-            <button
-              role="menuitem"
-              className="menu-item"
-              onClick={withClose(toggleAddPeriod)}
-              aria-pressed={!!showAddPeriod}
-            >
-              {showAddPeriod ? 'Cancel add period' : 'Add period'}
+            <button role="menuitem" className="menu-item" onClick={withMobileClose(toggleAddPeriod)}>
+              Add Period
             </button>
           </li>
           <li role="none">
-            <button
-              role="menuitem"
-              className="menu-item"
-              onClick={withClose(toggleAddBudget)}
-              aria-pressed={!!showAddBudget}
-            >
-              {showAddBudget ? 'Cancel add budget' : 'Add budget'}
+            <button role="menuitem" className="menu-item" onClick={withMobileClose(toggleAddBudget)}>
+              Add Budget
             </button>
           </li>
           <li role="none">
-            <button
-              role="menuitem"
-              className="menu-item"
-              onClick={withClose(toggleAddCategory)}
-              aria-pressed={!!showAddCategory}
-            >
-              {showAddCategory ? 'Cancel add category' : 'Add category'}
+            <button role="menuitem" className="menu-item" onClick={withMobileClose(toggleAddCategory)}>
+              Add Category
             </button>
           </li>
 
           <li role="separator" className="menu-sep" />
 
           <li role="none">
-            <button
-              role="menuitem"
-              className="menu-item danger"
-              onClick={withClose(onLogout)}
-            >
+            <button role="menuitem" className="menu-item danger" onClick={withMobileClose(onLogout)}>
               Logout
             </button>
           </li>

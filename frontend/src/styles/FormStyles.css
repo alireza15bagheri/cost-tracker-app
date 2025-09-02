@@ -1,49 +1,84 @@
+/* frontend/src/styles/FormStyles.css */
+/*
+  Unified dark-theme form styles, inspired by Login.css.
+  This single file now styles all app forms for consistency.
+*/
 .app-form {
-  margin: 1rem 0;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  max-width: 400px;
+  display: grid;
+  gap: 12px;
 }
 
 .app-form h3 {
-  margin-bottom: 0.75rem;
-  font-size: 1.2rem;
-  color: #333;
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: .2px;
+  color: var(--text);
 }
 
 .app-form input[type="text"],
 .app-form input[type="date"],
 .app-form input[type="number"],
 .app-form input[type="email"],
+.app-form select,
 .app-form textarea {
-  display: block;
   width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #0e1627;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
   font-size: 1rem;
+  font-family: inherit;
 }
 
-.app-form button {
-  background-color: #0078d4;
-  color: white;
+.app-form input::placeholder {
+  color: #6e7a90;
+}
+
+.app-form input:focus,
+.app-form select:focus,
+.app-form textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.app-form button[type="submit"] {
+  margin-top: 6px;
+  width: 100%;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, var(--primary), var(--primary-600));
   border: none;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 4px;
+  color: white;
+  font-weight: 600;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: transform .05s ease, filter .2s ease, box-shadow .2s ease;
+  box-shadow: 0 8px 20px rgba(79, 124, 255, .35);
 }
 
-.app-form button:hover {
-  background-color: #005fa3;
+.app-form button[type="submit"]:hover {
+  filter: brightness(1.05);
+}
+
+.app-form button[type="submit"]:active {
+  transform: translateY(1px);
+  box-shadow: 0 5px 14px rgba(79, 124, 255, .3);
+}
+
+.app-form button[type="submit"]:disabled {
+  opacity: .7;
+  cursor: not-allowed;
 }
 
 .app-form .error {
-  color: tomato;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 107, 107, .1);
+  border: 1px solid rgba(255, 107, 107, .35);
+  color: #ffd5d5;
+  font-size: .9rem;
 }

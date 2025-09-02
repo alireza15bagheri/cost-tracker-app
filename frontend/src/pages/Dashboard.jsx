@@ -157,7 +157,7 @@ export default function Dashboard() {
         toggleAddCategory={toggleAddCategorySafe}
       />
 
-      <PeriodSelector
+       <PeriodSelector
         periods={periods}
         value={activePeriodId}
         onChange={setActivePeriodId}
@@ -170,61 +170,59 @@ export default function Dashboard() {
 
       {!loading && !err && (
         <>
-          <h2>Your incomes</h2>
-          {activePeriodId ? (
-            <IncomeList incomes={memoIncomes} onDeleted={removeIncome} />
-          ) : (
-            <p>Please select a period to view incomes.</p>
-          )}
+          <div className="card">
+            <h2>Your Incomes</h2>
+            {activePeriodId ? (
+              <IncomeList incomes={memoIncomes} onDeleted={removeIncome} />
+            ) : (
+              <p>Please select a period to view incomes.</p>
+            )}
+          </div>
+          
+          <div className="card">
+            <h2>Your Budgets</h2>
+            {activePeriodId ? (
+              <>
+                <BudgetList
+                  budgets={memoBudgets}
+                  updatingBudget={updatingBudget}
+                  onToggleStatus={toggleBudgetStatus}
+                  onDeleted={removeBudget}
+                />
+                <BudgetSummary incomes={memoIncomes} budgets={memoBudgets} />
+              </>
+            ) : (
+              <p>Please select a period to view budgets.</p>
+            )}
+          </div>
 
-          <h2>Your budgets</h2>
-          {activePeriodId ? (
-            <>
-              <BudgetList
-                budgets={memoBudgets}
-                updatingBudget={updatingBudget}
-                onToggleStatus={toggleBudgetStatus}
-                onDeleted={removeBudget}
-              />
-              <BudgetSummary incomes={memoIncomes} budgets={memoBudgets} />
-            </>
-          ) : (
-            <p>Please select a period to view budgets.</p>
-          )}
-
-          <h2>Daily house spendings</h2>
-
-          {totalDefaultDaily != null && (
-            <div style={{ fontStyle: 'italic', color: '#555' }}>
-              Default daily limit × period days = {formatAmount(totalDefaultDaily)}
-            </div>
-          )}
-
-          {activePeriodId ? (
-            <>
-              <DailyHouseSpendings
-                periodId={activePeriodId}
-                defaultDailyLimit={activePeriod?.default_daily_limit}
-              />
-
-              {diffFromLeftover != null && (
-                <div
-                  style={{
-                    marginTop: '0.5rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  Left after budgets − (Default daily limit × period days) = {formatAmount(diffFromLeftover)}
-                </div>
-              )}
-            </>
-          ) : (
-            <p>Please select a period to view daily house spendings.</p>
-          )}
+          <div className="card">
+            <h2>Daily House Spendings</h2>
+            {totalDefaultDaily != null && (
+              <div style={{ fontStyle: 'italic', color: 'var(--muted)', marginBottom: '1rem' }}>
+                Default daily limit × period days = {formatAmount(totalDefaultDaily)}
+              </div>
+            )}
+            {activePeriodId ? (
+              <>
+                <DailyHouseSpendings
+                  periodId={activePeriodId}
+                  defaultDailyLimit={activePeriod?.default_daily_limit}
+                />
+                {diffFromLeftover != null && (
+                  <div style={{ marginTop: '1.5rem', fontWeight: 600, fontSize: '1.1rem' }}>
+                    Left after budgets − (Default daily limit × period days) = {formatAmount(diffFromLeftover)}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p>Please select a period to view daily house spendings.</p>
+            )}
+          </div>
           
           {activePeriodId && (
-            <>
-              <h2 style={{marginTop: '2rem'}}>Miscellaneous Costs</h2>
+            <div className="card">
+              <h2>Miscellaneous Costs</h2>
               <MiscellaneousCosts 
                 periodId={activePeriodId}
                 costs={memoMiscCosts}
@@ -233,21 +231,24 @@ export default function Dashboard() {
               />
               {finalRemaining != null && (
                  <div
-                  style={{
-                    marginTop: '0.5rem',
+                   style={{
+                    marginTop: '1.5rem',
                     fontWeight: 700,
                     color: diffColor,
-                    fontSize: '1.1rem'
-                  }}
+                    fontSize: '1.2rem',
+                    textAlign: 'right',
+                   }}
                 >
                   REMAINING AMOUNT: {formatAmount(finalRemaining)}
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {activePeriodId ? (
-            <PeriodNotes period={activePeriod} onSaved={handleNotesSaved} />
+            <div className="card">
+              <PeriodNotes period={activePeriod} onSaved={handleNotesSaved} />
+            </div>
           ) : null}
         </>
       )}
@@ -256,7 +257,7 @@ export default function Dashboard() {
       <Modal
         open={showIncomeForm}
         onClose={() => setShowIncomeForm(false)}
-        title="Add income"
+        title="Add Income"
         width={520}
       >
         <AddIncomeForm onAddIncome={handleAddIncome} activePeriodId={activePeriodId} />
@@ -265,7 +266,7 @@ export default function Dashboard() {
       <Modal
         open={showAddPeriod}
         onClose={() => setShowAddPeriod(false)}
-        title="Add period"
+        title="Add Period"
         width={520}
       >
         <AddPeriodForm onSuccess={handleAddPeriod} />
@@ -274,7 +275,7 @@ export default function Dashboard() {
       <Modal
         open={showAddBudget}
         onClose={() => setShowAddBudget(false)}
-        title="Add budget"
+        title="Add Budget"
         width={520}
       >
         {activePeriodId ? (
@@ -287,10 +288,10 @@ export default function Dashboard() {
       <Modal
         open={showAddCategory}
         onClose={() => setShowAddCategory(false)}
-        title="Add category"
+        title="Add Category"
         width={520}
       >
-        <AddCategoryForm onAddCategory={handleAddCategory} />
+         <AddCategoryForm onAddCategory={handleAddCategory} />
       </Modal>
     </div>
   );

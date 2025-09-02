@@ -6,6 +6,7 @@ import {
   deleteDailyHouseSpending,
 } from '../services/dailyHouseSpendings';
 import { formatAmount } from '../utils/format';
+import FormInput from './FormInput';
 
 // Helper to format date as yyyy-mm-dd (Gregorian/US)
 function toAmericanDate(isoDate) {
@@ -88,7 +89,6 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
         spent_amount: Number(form.spent_amount),
         fixed_daily_limit: Number(form.fixed_daily_limit),
       });
-
       setForm({ date: '', spent_amount: '', fixed_daily_limit: form.fixed_daily_limit });
       await fetchEntries();
     } catch (e2) {
@@ -126,7 +126,6 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
       setDeletingId(null);
     }
   };
-
   const hasEntries = Array.isArray(entries) && entries.length > 0;
 
   return (
@@ -139,61 +138,44 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
       )}
 
       <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
-        <fieldset style={{ border: '1px solid #ccc', padding: '1rem' }}>
+        <fieldset>
           <legend>Add New Spending</legend>
-
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label>
-              Date:{' '}
-              <input
-                type="date"
-                name="date"
-                value={form.date}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
-
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label>
-              Spent Amount:{' '}
-              <input
-                type="number"
-                name="spent_amount"
-                step="0.01"
-                value={form.spent_amount}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
-
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label>
-              Daily Limit:{' '}
-              <input
-                type="number"
-                name="fixed_daily_limit"
-                step="0.01"
-                value={form.fixed_daily_limit}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
-
+          <FormInput
+            type="date"
+            name="date"
+            value={form.date}
+            onChange={handleChange}
+            required
+          />
+          <FormInput
+            type="number"
+            name="spent_amount"
+            step="0.01"
+            value={form.spent_amount}
+            onChange={handleChange}
+            placeholder="Spent Amount"
+            required
+          />
+          <FormInput
+            type="number"
+            name="fixed_daily_limit"
+            step="0.01"
+            value={form.fixed_daily_limit}
+            onChange={handleChange}
+            placeholder="Daily Limit"
+            required
+          />
           <button type="submit" className="toggle-button success">
-            Save
+            Save Entry
           </button>
-        </fieldset>
+         </fieldset>
       </form>
 
       {!loading && !hasEntries && <p style={{ marginTop: '1rem' }}>No entries yet.</p>}
 
       {!loading && hasEntries && (
-        <div className="table-container">
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
+        <div className="table-container" style={{marginTop: '2rem'}}>
+          <table>
             <thead>
               <tr>
                 <th style={{ textAlign: 'left' }}>Date</th>
@@ -208,20 +190,20 @@ function DailyHouseSpendings({ periodId, defaultDailyLimit }) {
               {entries.map((e) => (
                 <tr key={e.id}>
                   <td>{toAmericanDate(e.date)}</td>
-                  <td style={{ textAlign: 'right' }}>{formatAmount(e.spent_amount)}</td>
+                   <td style={{ textAlign: 'right' }}>{formatAmount(e.spent_amount)}</td>
                   <td style={{ textAlign: 'right' }}>{formatAmount(e.fixed_daily_limit)}</td>
                   <td style={{ textAlign: 'right' }}>{formatAmount(e.carryover)}</td>
                   <td style={{ textAlign: 'right' }}>{formatAmount(e.remaining_for_day)}</td>
-                  <td style={{ textAlign: 'center' }}>
+                   <td style={{ textAlign: 'center' }}>
                     <button
                       type="button"
                       className="toggle-button danger"
                       title="Delete this entry"
-                      aria-label={`Delete entry for ${e.date}`}
+                       aria-label={`Delete entry for ${e.date}`}
                       onClick={() => handleDelete(e.id)}
                       disabled={deletingId === e.id}
                       style={{ minWidth: 32 }}
-                    >
+                     >
                       {deletingId === e.id ? '…' : '✕'}
                     </button>
                   </td>

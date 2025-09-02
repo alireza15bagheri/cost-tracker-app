@@ -1,3 +1,4 @@
+// /home/alireza/cost-tracker/frontend/src/components/AddPeriodForm.jsx
 import { useState } from 'react';
 import { createPeriod } from '../services/periods';
 import FormInput from '../components/FormInput'; // Import reusable input
@@ -8,7 +9,6 @@ export default function AddPeriodForm({ onSuccess }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -18,7 +18,6 @@ export default function AddPeriodForm({ onSuccess }) {
         start_date: startDate,
         end_date: endDate
       });
-
       onSuccess?.(newPeriod);
       setName('');
       setStartDate('');

@@ -57,9 +57,9 @@ export default function MiscellaneousCosts({ periodId, costs, onCostAdded, onCos
   };
 
   return (
-    <div style={{ marginTop: '1rem' }}>
+    <>
       <form onSubmit={handleSubmit} className="app-form">
-        <h3>Add Miscellaneous Cost</h3>
+        <h3>Add Cost</h3>
         {err && <div className="error">{err}</div>}
         <FormInput
           name="title"
@@ -82,9 +82,9 @@ export default function MiscellaneousCosts({ periodId, costs, onCostAdded, onCos
       </form>
 
       {costs.length > 0 && (
-        <ul>
+        <ul className="item-list" style={{marginTop: '1.5rem'}}>
           {costs.map((cost) => (
-            <li key={cost.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <li key={cost.id}>
               <span>
                 {cost.title}: {formatAmount(cost.amount)}
               </span>
@@ -99,6 +99,6 @@ export default function MiscellaneousCosts({ periodId, costs, onCostAdded, onCos
           ))}
         </ul>
       )}
-    </div>
+    </>
   );
 }

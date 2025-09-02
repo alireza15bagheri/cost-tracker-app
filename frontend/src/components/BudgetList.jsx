@@ -1,3 +1,4 @@
+// /home/alireza/cost-tracker/frontend/src/components/BudgetList.jsx
 import React from 'react';
 import { deleteBudget } from '../services/budgets';
 import { formatAmount } from '../utils/format';
@@ -15,16 +16,15 @@ export default function BudgetList({ budgets, onDeleted, onToggleStatus, updatin
   };
 
   return (
-    <ul>
+    <ul className="item-list">
       {budgets.map((b) => (
         <li
           key={b.id}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
           <span>
             {b.category?.name || `Category ${b.category}`} — {formatAmount(b.amount_allocated)} ({b.status})
           </span>
-          <button
+           <button
             className="toggle-button"
             disabled={!!updatingBudget?.[b.id]}
             onClick={() => onToggleStatus?.(b.id, b.status)}
@@ -35,11 +35,11 @@ export default function BudgetList({ budgets, onDeleted, onToggleStatus, updatin
               ? 'Mark as not paid'
               : 'Mark as paid'}
           </button>
-          <button className="toggle-button" onClick={() => handleDelete(b.id)}>
+          <button className="toggle-button danger" onClick={() => handleDelete(b.id)}>
             Delete
           </button>
         </li>
       ))}
     </ul>
-  );
+   );
 }
